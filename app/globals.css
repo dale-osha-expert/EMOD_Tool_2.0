@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+/*
+ * The tool ships both as a full page and as an iframe embed inside a wider
+ * "tools" site, so all responsive behaviour keys off container width rather
+ * than viewport width. A narrow column on a wide monitor must lay out like a
+ * phone, which viewport media queries cannot express.
+ */
+
+@theme {
+  --color-canvas: #ffffff;
+  --color-surface: #f6f7f9;
+  --color-surface-2: #eef0f3;
+  --color-line: #dfe3e8;
+  --color-line-strong: #c6ccd4;
+  --color-ink: #14181d;
+  --color-ink-muted: #5a6472;
+  --color-ink-faint: #8b95a3;
+  --color-accent: #1b5e8a;
+  --color-accent-soft: #e7f0f7;
+  --color-positive: #14714f;
+  --color-positive-soft: #e2f2ec;
+  --color-caution: #8a5300;
+  --color-caution-soft: #fbf0dd;
+  --color-critical: #a52218;
+  --color-critical-soft: #fbe9e7;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-canvas: #12151a;
+    --color-surface: #191d23;
+    --color-surface-2: #21262e;
+    --color-line: #2c333c;
+    --color-line-strong: #3d4650;
+    --color-ink: #e6e9ee;
+    --color-ink-muted: #9aa4b2;
+    --color-ink-faint: #6d7885;
+    --color-accent: #71b1dd;
+    --color-accent-soft: #16303f;
+    --color-positive: #58c39b;
+    --color-positive-soft: #123328;
+    --color-caution: #e2a552;
+    --color-caution-soft: #33260f;
+    --color-critical: #f08a80;
+    --color-critical-soft: #3a1a17;
+  }
+}
+
+:root[data-theme="dark"] {
+  --color-canvas: #12151a;
+  --color-surface: #191d23;
+  --color-surface-2: #21262e;
+  --color-line: #2c333c;
+  --color-line-strong: #3d4650;
+  --color-ink: #e6e9ee;
+  --color-ink-muted: #9aa4b2;
+  --color-ink-faint: #6d7885;
+  --color-accent: #71b1dd;
+  --color-accent-soft: #16303f;
+  --color-positive: #58c39b;
+  --color-positive-soft: #123328;
+  --color-caution: #e2a552;
+  --color-caution-soft: #33260f;
+  --color-critical: #f08a80;
+  --color-critical-soft: #3a1a17;
+}
+
+html,
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* Figures line up in columns only if the digits are tabular. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+:where(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Wide content scrolls inside its own box; the page body never scrolls sideways. */
+.scroll-x {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}

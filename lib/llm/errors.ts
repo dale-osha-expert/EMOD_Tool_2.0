@@ -42,7 +42,7 @@ export const notConfigured = () =>
   new AiError(
     "not_configured",
     "No AI key is configured for this deployment.",
-    "The calculations, scenarios and report below are complete without it. To add the written analysis, set GEMINI_API_KEY on the server or paste your own key using the key button.",
+    "The calculations, scenarios and report below are complete without it. To add the written analysis, set GEMINI_API_KEY on the server, or paste your own key under Options.",
   );
 
 export const modelUnavailable = (model: string) =>

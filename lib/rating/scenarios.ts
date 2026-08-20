@@ -150,7 +150,7 @@ export function buildScenarios(ws: Worksheet, current: ModComputation): Scenario
         ctx,
         `remove:${claim.claimNumber}`,
         `Without claim ${claim.claimNumber}`,
-        `The mod if this claim carried no loss dollars at all. It isolates how much of the current mod this single claim accounts for.`,
+        describeRemoval(claim, ctx),
         {
           actualPrimary: Math.max(0, base.actualPrimary - primary),
           actualExcess: Math.max(0, base.actualExcess - excess),
@@ -236,4 +236,31 @@ export function buildScenarios(ws: Worksheet, current: ModComputation): Scenario
   }
 
   return scenarios;
+}
+
+/**
+ * What removing a particular claim means in practice, rather than a generic
+ * sentence repeated once per claim. What matters differs by claim: an open
+ * claim is a live reserve, a capped one is mostly excess, a closed medical-only
+ * one is already discounted and largely settled.
+ */
+function describeRemoval(claim: Claim, ctx: ScenarioContext): string {
+  const amount = `$${Math.round(claim.actualIncurred).toLocaleString("en-US")}`;
+  const capped =
+    ctx.splitPoint !== null && claim.actualPrimary < claim.actualIncurred;
+
+  const opening =
+    claim.status === "O"
+      ? `This claim is still open at ${amount} incurred, so its reserve is an estimate that can still move.`
+      : claim.status === "F"
+        ? `This claim is closed at ${amount} incurred, so its value is unlikely to change.`
+        : `This claim carries ${amount} incurred.`;
+
+  const mechanism = capped
+    ? ` Only $${Math.round(claim.actualPrimary).toLocaleString("en-US")} of it is primary; the rest is excess and enters the mod at the ${ctx.base.weight.toFixed(2)} weighting factor.`
+    : claim.injuryType === MEDICAL_ONLY_INJURY_TYPE && ctx.eraReduction !== null
+      ? ` It is medical only, so the ${Math.round(ctx.eraReduction * 100)}% reduction already removes most of its weight.`
+      : " All of it is primary, so it counts against the mod dollar for dollar.";
+
+  return opening + mechanism;
 }

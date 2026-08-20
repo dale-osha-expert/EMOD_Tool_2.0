@@ -23,6 +23,32 @@ if (!input || !output) {
 
 const REDACTED_ID = "900000000";
 
+/*
+ * Identifiers are replaced with same-length stand-ins so the fixture stays
+ * faithful to the original page geometry while carrying nothing that could
+ * re-identify the business the sample worksheet belongs to.
+ */
+const REPLACEMENTS = [
+  // Risk id.
+  [/\b9150365\d{2}\b/g, REDACTED_ID],
+  // Policy numbers, in the formats these worksheets use.
+  [/WDR\d+/g, (m) => "PLA" + seq(m, m.length - 3)],
+  [/\bWC\d{8,}/g, (m) => "WC" + seq(m, m.length - 2)],
+  [/\b\d{2}WN[A-Z]{2}\d+/g, (m) => "00WNZZ" + seq(m, m.length - 6)],
+  [/\b1014389\b/g, "5550001"],
+  // Claim numbers.
+  [/\b10000\d{4,}/g, (m) => "10000" + seq(m, m.length - 5)],
+  // Carrier codes.
+  [/\b(19909|36658|10456|27944|14095)\b/g, (m) => seq(m, 5)],
+];
+
+/** Deterministic digits of the same length, so widths and column fits hold. */
+function seq(source, length) {
+  let hash = 7;
+  for (const ch of source) hash = (hash * 31 + ch.charCodeAt(0)) % 1_000_000_007;
+  return String(hash).padStart(length, "1").slice(-length);
+}
+
 const data = new Uint8Array(await readFile(input));
 const pdf = await pdfjs.getDocument({ data, isEvalSupported: false }).promise;
 
@@ -75,7 +101,9 @@ function round(n) {
  * geometry in the fixture stays faithful to the original document.
  */
 function redact(text) {
-  return text
-    .replace(/\b9150365\d{2}\b/g, REDACTED_ID)
-    .replace(/CASTLE STEEL INC/gi, redactedName);
+  let out = text.replace(/CASTLE STEEL INC/gi, redactedName);
+  for (const [pattern, replacement] of REPLACEMENTS) {
+    out = out.replace(pattern, replacement);
+  }
+  return out;
 }

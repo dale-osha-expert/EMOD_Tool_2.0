@@ -71,8 +71,8 @@ describe("policy blocks", () => {
     const p = ws.policies[0];
     expect(p).toMatchObject({
       state: "02-ARIZONA",
-      carrier: "19909",
-      policyNumber: "1014389",
+      carrier: "10995",
+      policyNumber: "5550001",
       effectiveDate: "03/30/2020",
       expirationDate: "03/30/2021",
       subjectPremium: 190856,

@@ -7,6 +7,14 @@ import { loadFixture } from "./helpers";
 
 const analysis = analyzeDocument(loadFixture("interstate-az-fl"));
 
+/**
+ * Claims are identified by their financial shape rather than by number, so
+ * these assertions survive the fixture's identifiers being re-pseudonymised.
+ */
+const bigOpenClaim = analysis.worksheet.claims.find(
+  (c) => c.actualIncurred === 88221,
+)!;
+
 describe("the mod formula", () => {
   it("reproduces every derived cell the worksheet prints", () => {
     const c = analysis.computed;
@@ -117,14 +125,16 @@ describe("what-if scenarios", () => {
 
   it("isolates the large open claim", () => {
     const scenario = analysis.scenarios.find(
-      (s) => s.id.startsWith("remove:") && s.claimNumber === "1000064926",
+      (s) =>
+        s.id.startsWith("remove:") &&
+        s.claimNumber === bigOpenClaim.claimNumber,
     )!;
     expect(scenario.mod).toBe(0.63);
     expect(scenario.modDelta).toBe(-0.21);
   });
 
   it("models reserve reductions against the split point", () => {
-    const half = byId("reserve:1000064926:0.5");
+    const half = byId(`reserve:${bigOpenClaim.claimNumber}:0.5`);
     expect(half.mod).toBeLessThan(analysis.computed.mod);
     expect(half.mod).toBeGreaterThan(byId("minimum").mod);
   });
@@ -148,8 +158,8 @@ describe("split point", () => {
 
 describe("findings", () => {
   it("surfaces the open claim as the highest-leverage item", () => {
-    const open = analysis.findings.find((f) =>
-      f.id.startsWith("open-claim:1000064926"),
+    const open = analysis.findings.find(
+      (f) => f.id === `open-claim:${bigOpenClaim.claimNumber}`,
     );
     expect(open).toBeDefined();
     expect(open!.severity).toBe("warning");
@@ -157,7 +167,9 @@ describe("findings", () => {
 
   it("notes the split-point cap on that claim", () => {
     expect(
-      analysis.findings.some((f) => f.id === "capped:1000064926"),
+      analysis.findings.some(
+        (f) => f.id === `capped:${bigOpenClaim.claimNumber}`,
+      ),
     ).toBe(true);
   });
 
