@@ -88,6 +88,19 @@ const styles = StyleSheet.create({
   itemTitle: { fontFamily: "Helvetica-Bold", marginBottom: 2 },
   evidence: { fontSize: 7.5, color: "#5a6472", marginTop: 2 },
 
+  warning: {
+    borderWidth: 1,
+    borderColor: "#e0b4ae",
+    backgroundColor: "#fbe9e7",
+    borderRadius: 3,
+    padding: 8,
+    marginBottom: 10,
+  },
+  warningTitle: {
+    fontFamily: "Helvetica-Bold",
+    color: "#a52218",
+    marginBottom: 2,
+  },
   callout: {
     borderWidth: 1,
     borderColor: "#c9dced",
@@ -176,6 +189,24 @@ export function EmodReport({
           {ws.productionDate ? ` · produced ${ws.productionDate}` : ""}
         </Text>
         <View style={styles.rule} />
+
+        {!analysis.reconciliation.passed ? (
+          <View style={styles.warning}>
+            <Text style={styles.warningTitle}>
+              These figures did not fully reconcile
+            </Text>
+            <Text>
+              {analysis.reconciliation.failedCount} of the{" "}
+              {analysis.reconciliation.checks.length} arithmetic checks run
+              against the worksheet did not tie out. Either the worksheet was
+              misread or it is internally inconsistent, so every figure in this
+              report should be treated as unverified until that is resolved.
+              {options.sections.includes("verification")
+                ? " The Verification section lists the specific cells involved."
+                : ""}
+            </Text>
+          </View>
+        ) : null}
 
         {has("summary") ? <SummarySection analysis={analysis} /> : null}
 

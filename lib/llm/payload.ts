@@ -196,7 +196,8 @@ export function buildAnalysisPayload(
       totalPayroll: p.totalPayroll,
     })),
     findings: analysis.findings.map((f) => ({
-      id: f.id,
+      // Ids embed the claim number they refer to, so they need scrubbing too.
+      id: scrub(f.id),
       severity: f.severity,
       title: scrub(f.title),
       detail: scrub(f.detail),

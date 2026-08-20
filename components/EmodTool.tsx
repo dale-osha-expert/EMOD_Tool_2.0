@@ -24,8 +24,17 @@ import { Button } from "./ui";
 export function EmodTool({ chrome = true }: { chrome?: boolean }) {
   const tool = useEmodTool();
   const [manual, setManual] = useState(false);
+  const [showUnverified, setShowUnverified] = useState(false);
 
   const busy = tool.stage === "reading" || tool.stage === "transcribing";
+
+  // Figures that do not reconcile are withheld until the user has seen why and
+  // chosen to look anyway. Showing a confident mod built on values we know do
+  // not tie out is the failure this tool exists to avoid.
+  const blocked =
+    tool.analysis !== null &&
+    !tool.analysis.reconciliation.passed &&
+    !showUnverified;
 
   return (
     <div className="@container mx-auto w-full max-w-[1180px] px-4 py-5 @2xl:px-6 @2xl:py-7">
@@ -42,7 +51,11 @@ export function EmodTool({ chrome = true }: { chrome?: boolean }) {
             </p>
           </div>
           {tool.stage === "ready" ? (
-            <Button variant="secondary" onClick={() => { tool.reset(); setManual(false); }}>
+            <Button variant="secondary" onClick={() => {
+                tool.reset();
+                setManual(false);
+                setShowUnverified(false);
+              }}>
               New worksheet
             </Button>
           ) : null}
@@ -145,11 +158,55 @@ export function EmodTool({ chrome = true }: { chrome?: boolean }) {
             result={tool.analysis.reconciliation}
             source={tool.source}
           />
-          <ModSummary analysis={tool.analysis} />
-          <ScenariosPanel analysis={tool.analysis} />
-          <FindingsList findings={tool.analysis.findings} />
-          <ClaimsTable analysis={tool.analysis} />
 
+          {blocked ? (
+            <div className="rounded-lg border border-[var(--color-critical)]/35 bg-[var(--color-critical-soft)] px-4 py-4">
+              <p className="text-[14px] font-semibold text-[var(--color-critical)]">
+                The calculated figures are being withheld
+              </p>
+              <p className="mt-1.5 max-w-2xl text-[13px] leading-relaxed">
+                {tool.analysis.reconciliation.failedCount} of the arithmetic
+                checks above did not tie out, listed with the exact cells
+                involved. Either the worksheet was misread, or the worksheet
+                itself is inconsistent. Until that is resolved, anything
+                calculated from these values could be wrong, so it is not being
+                shown as though it were reliable.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    tool.reset();
+                    setManual(true);
+                  }}
+                >
+                  Enter the figures by hand
+                </Button>
+                <Button variant="ghost" onClick={() => setShowUnverified(true)}>
+                  Show them anyway
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
+          {!blocked ? (
+            <>
+              {!tool.analysis.reconciliation.passed ? (
+                <p className="rounded-md border border-[var(--color-critical)]/35 bg-[var(--color-critical-soft)] px-3 py-2 text-[12.5px] leading-relaxed">
+                  These figures did not fully reconcile against the source
+                  document. Treat everything below as unverified until the
+                  checks above are resolved.
+                </p>
+              ) : null}
+
+              <ModSummary analysis={tool.analysis} />
+              <ScenariosPanel analysis={tool.analysis} />
+              <FindingsList findings={tool.analysis.findings} />
+              <ClaimsTable analysis={tool.analysis} />
+            </>
+          ) : null}
+
+          {!blocked ? (
           <AiPanel
             ai={tool.ai}
             onRequest={tool.requestNarrative}
@@ -158,11 +215,14 @@ export function EmodTool({ chrome = true }: { chrome?: boolean }) {
             shareIdentity={tool.shareIdentity}
             onShareIdentityChange={tool.setShareIdentity}
           />
+          ) : null}
 
-          <ReportBuilder
-            analysis={tool.analysis}
-            narrative={tool.ai.narrative}
-          />
+          {!blocked ? (
+            <ReportBuilder
+              analysis={tool.analysis}
+              narrative={tool.ai.narrative}
+            />
+          ) : null}
 
           <footer className="pb-2 pt-1 text-[11.5px] leading-relaxed text-[var(--color-ink-faint)]">
             Calculations are derived from your worksheet using the NCCI
