@@ -150,6 +150,12 @@ export const WorksheetSchema = z.object({
   /** Free-text notes printed under the summary (REVISED RATING, ERA statement, ...). */
   notes: z.array(z.string()),
   /**
+   * Verbatim text of the rows the key figures were read from. Retained so the
+   * AI cross-check can compare what we parsed against what the page says,
+   * without needing the PDF itself.
+   */
+  sourceLines: z.array(z.string()),
+  /**
    * ERA reduction fraction parsed out of the notes text (e.g. 0.70 for
    * "A DECREASE OF 70% MEDICAL ONLY ..."). Null when the worksheet says nothing,
    * which means we must not assume ERA applies.

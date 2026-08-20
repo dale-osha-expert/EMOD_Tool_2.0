@@ -139,9 +139,32 @@ export function parseWorksheet(doc: ExtractedDocument): Worksheet {
     policies,
     claims,
     notes,
+    sourceLines: collectSourceLines(pages),
     eraReduction: parseEraReduction(notes),
     pageCount: doc.pages.length,
   };
+}
+
+/**
+ * The verbatim rows the key figures came from: the whole summary page, plus any
+ * row on a later page that carries a claim. This is what the AI cross-check
+ * compares the parsed model against, and it is a small fraction of the document.
+ */
+function collectSourceLines(
+  pages: { page: PdfPage; rows: Row[] }[],
+): string[] {
+  const lines: string[] = [];
+
+  for (const { page, rows } of pages) {
+    for (const row of rows) {
+      const text = rowText(row);
+      if (!text || BOILERPLATE.test(text)) continue;
+      const isClaimRow = row.items.some((i) => /^\d{7,}$/.test(i.text));
+      if (page.pageNumber === 1 || isClaimRow) lines.push(text);
+    }
+  }
+
+  return lines;
 }
 
 /* ------------------------------------------------------------------ *
