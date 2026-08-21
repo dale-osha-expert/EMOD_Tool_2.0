@@ -22,7 +22,7 @@ export async function POST(request: Request) {
   // A user-supplied key takes precedence and is never persisted; it lives only
   // for the duration of this request.
   const apiKey = body.apiKey?.trim() || process.env.GEMINI_API_KEY?.trim();
-  const model = process.env.GEMINI_MODEL?.trim() || "gemini-flash-latest";
+  const model = process.env.GEMINI_MODEL?.trim() || "gemini-3.6-flash";
 
   if (!apiKey) {
     return NextResponse.json({ error: notConfigured().toJSON() }, { status: 503 });

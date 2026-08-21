@@ -38,7 +38,7 @@ export async function POST(request: Request) {
   const model =
     process.env.GEMINI_VISION_MODEL?.trim() ||
     process.env.GEMINI_MODEL?.trim() ||
-    "gemini-flash-latest";
+    "gemini-3.5-flash-lite";
 
   if (!apiKey) {
     return NextResponse.json({ error: notConfigured().toJSON() }, { status: 503 });

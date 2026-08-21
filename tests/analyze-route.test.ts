@@ -34,7 +34,7 @@ const request = (body: unknown) =>
 
 beforeEach(() => {
   vi.stubEnv("GEMINI_API_KEY", "test-key");
-  vi.stubEnv("GEMINI_MODEL", "gemini-flash-latest");
+  vi.stubEnv("GEMINI_MODEL", "gemini-3.6-flash");
 });
 
 afterEach(() => {
@@ -65,7 +65,7 @@ describe("the analyze route", () => {
     expect(response.status).toBe(200);
     const data = await response.json();
     expect(data.narrative.summary).toContain("loss-free minimum");
-    expect(data.model).toBe("gemini-flash-latest");
+    expect(data.model).toBe("gemini-3.6-flash");
   });
 
   it("rejects a structurally invalid narrative rather than rendering part of it", async () => {
@@ -92,6 +92,20 @@ describe("the analyze route", () => {
     expect(response.status).toBe(503);
     expect((await response.json()).error.code).toBe("not_configured");
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("defaults to a pinned model, never a -latest alias", async () => {
+    // An alias is hot-swapped and can point at a preview model, so its
+    // behaviour changes with no signal. A pinned model that retires returns a
+    // 404 the tool reports by name. Loud failure over silent drift.
+    vi.stubEnv("GEMINI_MODEL", "");
+    geminiReturns({ summary: "ok", recommendations: [], discrepancies: [] });
+
+    const response = await POST(request({ payload: {} }));
+    const { model } = await response.json();
+
+    expect(model).not.toMatch(/-latest$/);
+    expect(model).toMatch(/^gemini-\d/);
   });
 
   it("prefers a user-supplied key over the server key", async () => {

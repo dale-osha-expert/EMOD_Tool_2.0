@@ -119,20 +119,39 @@ written analysis is unavailable.
 | Variable | Purpose |
 |---|---|
 | `GEMINI_API_KEY` | Server-side only, never exposed to the browser. Free key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey). |
-| `GEMINI_MODEL` | Defaults to `gemini-flash-latest`. The free tier covers Flash and Flash-Lite; Pro is behind billing. |
-| `GEMINI_VISION_MODEL` | Model for the scanned-PDF fallback. Falls back to `GEMINI_MODEL`. |
+| `GEMINI_MODEL` | Narrative and cross-check. Defaults to `gemini-3.6-flash`. Free tier covers Flash and Flash-Lite; Pro is behind billing. |
+| `GEMINI_VISION_MODEL` | Scanned-PDF transcription. Defaults to `gemini-3.5-flash-lite`, which is optimised for document parsing. Falls back to `GEMINI_MODEL`. |
 | `ALLOWED_FRAME_ANCESTORS` | Restricts which sites may iframe the tool. Defaults to `*`. |
 
-The free tier's binding limit is **10 requests per minute** per key. Since one
-analysis is one request, that is the practical ceiling on concurrent users.
-Users can supply their own key under **Options** to bypass the shared quota; it
-is held in memory for that session only and never stored.
+**Pin an explicit model version; do not use a `-latest` alias.** An alias is
+hot-swapped on every release and may point at a preview or experimental model,
+so its behaviour changes with no signal. A pinned model that retires returns a
+404, which the tool reports by name — *"the configured AI model X is not
+available"* — while every calculation keeps working. A loud failure you can act
+on beats a quiet drift you cannot detect, which is the whole premise of this
+rebuild. Avoid `gemini-2.5-flash` and `gemini-2.5-flash-lite`: both shut down
+2026-10-16.
+
+The free tier's binding constraint is **requests per minute** per key, and one
+analysis is one request — so that figure is the practical ceiling on concurrent
+users. Google's published numbers move and vary by model, so read the live quota
+in AI Studio rather than trusting a figure from documentation. Users can supply
+their own key under **Options** to bypass the shared quota; it is held in memory
+for that session only and never stored.
+
+Splitting the two model variables keeps the quotas independent: rate limits are
+per-model, so transcribing a scanned worksheet does not eat into the budget the
+written analysis draws on.
 
 ### Deploying to Vercel
 
-Push the repo, import it, and set `GEMINI_API_KEY` (and optionally
-`GEMINI_MODEL`) as project environment variables. Nothing else is required —
-there is no database and no persistent state.
+Push the repo, import it, and set `GEMINI_API_KEY`, `GEMINI_MODEL` and
+`GEMINI_VISION_MODEL` as project environment variables. Nothing else is required
+— there is no database and no persistent state.
+
+Env changes need a redeploy to take effect. When a pinned model eventually
+retires, the symptom is a stated error naming the model and the fix is to update
+that one variable; nothing else in the tool is affected.
 
 ---
 

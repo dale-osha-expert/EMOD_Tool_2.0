@@ -14,7 +14,7 @@ import { AiNarrativeSchema } from "@/lib/llm/schema";
 const call = () =>
   callGemini({
     apiKey: "test-key",
-    model: "gemini-flash-latest",
+    model: "gemini-3.6-flash",
     parts: [{ text: "hello" }],
   });
 
@@ -40,7 +40,7 @@ describe("AI failures never degrade into defaults", () => {
     const error = await call().catch((e) => e);
     expect(error).toBeInstanceOf(AiError);
     expect(error.code).toBe("model_unavailable");
-    expect(error.message).toContain("gemini-flash-latest");
+    expect(error.message).toContain("gemini-3.6-flash");
     expect(error.retryable).toBe(false);
   });
 
