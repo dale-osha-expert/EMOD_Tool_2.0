@@ -1,5 +1,6 @@
 import { z } from "zod";
-import type { AiNarrative, Analysis } from "../types";
+import { MEDICAL_ONLY_INJURY_TYPE, type AiNarrative, type Analysis } from "../types";
+import { ratedContributions } from "../rating/claims";
 
 /**
  * What actually gets sent to the model.
@@ -65,6 +66,14 @@ export const AnalysisPayloadSchema = z
             status: z.enum(["open", "closed"]).nullable(),
             actualIncurred: z.number().finite(),
             actualPrimary: z.number().finite(),
+            /**
+             * What the claim actually contributes after the medical-only
+             * discount and any loss limitation. For a limited claim this is
+             * well below the printed incurred, and it is the figure that
+             * should be quoted.
+             */
+            ratedIncurred: z.number().finite(),
+            limited: z.boolean(),
             flags: z.array(z.string().max(4)).max(12),
           })
           .strict(),
@@ -169,6 +178,7 @@ export function buildAnalysisPayload(
   options: { includeIdentity: boolean },
 ): { payload: AnalysisPayload; redaction: RedactionMap } {
   const { worksheet: ws, computed } = analysis;
+  const contributions = ratedContributions(ws);
 
   const claims: Record<string, string> = {};
   const refFor = new Map<string, string>();
@@ -243,15 +253,29 @@ export function buildAnalysisPayload(
       averageAnnualSubjectPremium:
         analysis.subjectPremium === null ? null : round(analysis.subjectPremium),
     },
-    claims: ws.claims.map((c) => ({
-      ref: refFor.get(c.claimNumber)!,
-      injuryType: c.injuryType,
-      injuryTypeLabel: c.injuryType ? (INJURY_LABELS[c.injuryType] ?? null) : null,
-      status: c.status === "O" ? "open" : c.status === "F" ? "closed" : null,
-      actualIncurred: c.actualIncurred,
-      actualPrimary: c.actualPrimary,
-      flags: c.flags,
-    })),
+    claims: ws.claims.map((c) => {
+      const rated = contributions.byClaim.get(c);
+      const era =
+        ws.eraReduction !== null && c.injuryType === MEDICAL_ONLY_INJURY_TYPE
+          ? 1 - ws.eraReduction
+          : 1;
+      return {
+        ref: refFor.get(c.claimNumber)!,
+        injuryType: c.injuryType,
+        injuryTypeLabel: c.injuryType ? (INJURY_LABELS[c.injuryType] ?? null) : null,
+        status: (c.status === "O" ? "open" : c.status === "F" ? "closed" : null) as
+          | "open"
+          | "closed"
+          | null,
+        actualIncurred: c.actualIncurred,
+        actualPrimary: c.actualPrimary,
+        ratedIncurred: rated
+          ? round((rated.primary + rated.excess) / Math.max(era, 1e-9))
+          : c.actualIncurred,
+        limited: rated?.limited ?? false,
+        flags: c.flags,
+      };
+    }),
     classes: [...classMap.values()].sort(
       (a, b) => b.totalPayroll - a.totalPayroll,
     ),

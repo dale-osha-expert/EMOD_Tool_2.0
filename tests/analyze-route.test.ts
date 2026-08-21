@@ -195,3 +195,31 @@ describe("what leaves the browser", () => {
     expect(restored.recommendations[0].claimNumber).toBe(real);
   });
 });
+
+describe("what the model is told about claims", () => {
+  it("sends the rated value of a limited claim, not just the printed one", () => {
+    // The narrative quoted the printed $233,837 for a claim the rating only
+    // used ~$151,500 of, because the payload carried nothing else. Sending the
+    // rated figure is what lets the model avoid overstating the claim.
+    const { payload } = buildAnalysisPayload(
+      analyzeDocument(loadFixture("interstate-az-fl-tx-2025")),
+      { includeIdentity: false },
+    );
+
+    const limited = payload.claims.find((c) => c.limited)!;
+    expect(limited).toBeDefined();
+    expect(limited.actualIncurred).toBe(233837);
+    expect(Math.round(limited.ratedIncurred)).toBe(151500);
+  });
+
+  it("marks unlimited claims as such, with rated matching printed", () => {
+    const { payload } = buildAnalysisPayload(
+      analyzeDocument(loadFixture("interstate-az-fl-tx-2025")),
+      { includeIdentity: false },
+    );
+
+    for (const claim of payload.claims.filter((c) => !c.limited)) {
+      expect(Math.round(claim.ratedIncurred)).toBe(claim.actualIncurred);
+    }
+  });
+});
