@@ -119,6 +119,14 @@ try {
     configured || alertText.length > 40,
     alertText.slice(0, 120),
   );
+  // The route requires an Origin header. Browsers send one on every POST, but
+  // if that ever stops being true the tool breaks for everyone, so assert the
+  // real browser actually got past the guard rather than trusting the spec.
+  check(
+    "the browser's own request is not rejected by the origin guard",
+    !/only accepts requests from the tool itself/i.test(alertText),
+    alertText.slice(0, 120),
+  );
   check(
     "calculations survive an AI failure",
     await page.locator("text=Experience modification factor").isVisible(),

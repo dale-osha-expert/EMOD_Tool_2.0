@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { AiNarrative, Analysis } from "../types";
 
 /**
@@ -8,77 +9,143 @@ import type { AiNarrative, Analysis } from "../types";
  * still refer to a specific claim in its recommendations; the client maps them
  * back before anything is displayed.
  */
-export interface AnalysisPayload {
-  meta: {
-    ratingEffectiveDate: string | null;
-    productionDate: string | null;
-    state: string | null;
-    riskName?: string;
-    riskId?: string;
-  };
-  rating: {
-    publishedMod: number | null;
-    recomputedMod: number;
-    weight: number;
-    expectedLosses: number;
-    expectedPrimary: number;
-    expectedExcess: number;
-    actualIncurred: number;
-    actualPrimary: number;
-    actualExcess: number;
-    ballast: number;
-    stabilizingValue: number;
-    numerator: number;
-    denominator: number;
-    splitPoint: number | null;
-    eraReduction: number | null;
-    averageAnnualSubjectPremium: number | null;
-  };
-  claims: {
-    ref: string;
-    injuryType: string | null;
-    injuryTypeLabel: string | null;
-    status: "open" | "closed" | null;
-    actualIncurred: number;
-    actualPrimary: number;
-    flags: string[];
-  }[];
-  classes: {
-    code: string;
-    description: string | null;
-    elr: number | null;
-    dRatio: number | null;
-    totalPayroll: number;
-    totalExpectedLosses: number;
-  }[];
-  policyYears: {
-    effectiveDate: string | null;
-    expirationDate: string | null;
-    state: string;
-    subjectPremium: number | null;
-    totalPayroll: number | null;
-  }[];
-  findings: {
-    id: string;
-    severity: string;
-    title: string;
-    detail: string;
-  }[];
-  scenarios: {
-    id: string;
-    label: string;
-    mod: number;
-    modDelta: number;
-    premiumDelta: number | null;
-  }[];
-  reconciliation: {
-    passed: boolean;
-    failed: { scope: string; rule: string; printed: number; derived: number }[];
-  };
-  notes: string[];
-  /** Verbatim rows, for the model to check our reading against. */
-  sourceLines: string[];
-}
+/*
+ * The payload is validated on the way in as well as built here.
+ *
+ * The route stringifies it into the prompt, so without a schema the endpoint is
+ * a general-purpose LLM proxy on this deployment's key: any caller could put
+ * arbitrary text in and get a completion back. Constraining the shape, and
+ * capping every array length and string length, makes it useless for that while
+ * leaving enormous headroom over a real worksheet - the reference document
+ * produces 47 source lines and 3 claims against the limits below.
+ */
+
+const shortText = z.string().max(200);
+const bodyText = z.string().max(3000);
+const nullableNumber = z.number().finite().nullable();
+
+export const AnalysisPayloadSchema = z
+  .object({
+    meta: z
+      .object({
+        ratingEffectiveDate: shortText.nullable(),
+        productionDate: shortText.nullable(),
+        state: shortText.nullable(),
+        riskName: shortText.optional(),
+        riskId: shortText.optional(),
+      })
+      .strict(),
+    rating: z
+      .object({
+        publishedMod: nullableNumber,
+        recomputedMod: z.number().finite(),
+        weight: z.number().finite(),
+        expectedLosses: z.number().finite(),
+        expectedPrimary: z.number().finite(),
+        expectedExcess: z.number().finite(),
+        actualIncurred: z.number().finite(),
+        actualPrimary: z.number().finite(),
+        actualExcess: z.number().finite(),
+        ballast: z.number().finite(),
+        stabilizingValue: z.number().finite(),
+        numerator: z.number().finite(),
+        denominator: z.number().finite(),
+        splitPoint: nullableNumber,
+        eraReduction: nullableNumber,
+        averageAnnualSubjectPremium: nullableNumber,
+      })
+      .strict(),
+    claims: z
+      .array(
+        z
+          .object({
+            ref: shortText,
+            injuryType: shortText.nullable(),
+            injuryTypeLabel: shortText.nullable(),
+            status: z.enum(["open", "closed"]).nullable(),
+            actualIncurred: z.number().finite(),
+            actualPrimary: z.number().finite(),
+            flags: z.array(z.string().max(4)).max(12),
+          })
+          .strict(),
+      )
+      .max(300),
+    classes: z
+      .array(
+        z
+          .object({
+            code: shortText,
+            description: shortText.nullable(),
+            elr: nullableNumber,
+            dRatio: nullableNumber,
+            totalPayroll: z.number().finite(),
+            totalExpectedLosses: z.number().finite(),
+          })
+          .strict(),
+      )
+      .max(200),
+    policyYears: z
+      .array(
+        z
+          .object({
+            effectiveDate: shortText.nullable(),
+            expirationDate: shortText.nullable(),
+            state: shortText,
+            subjectPremium: nullableNumber,
+            totalPayroll: nullableNumber,
+          })
+          .strict(),
+      )
+      .max(100),
+    findings: z
+      .array(
+        z
+          .object({
+            id: shortText,
+            severity: shortText,
+            title: z.string().max(300),
+            detail: bodyText,
+          })
+          .strict(),
+      )
+      .max(60),
+    scenarios: z
+      .array(
+        z
+          .object({
+            id: shortText,
+            label: z.string().max(300),
+            mod: z.number().finite(),
+            modDelta: z.number().finite(),
+            premiumDelta: nullableNumber,
+          })
+          .strict(),
+      )
+      .max(500),
+    reconciliation: z
+      .object({
+        passed: z.boolean(),
+        failed: z
+          .array(
+            z
+              .object({
+                scope: z.string().max(300),
+                rule: z.string().max(300),
+                printed: z.number().finite(),
+                derived: z.number().finite(),
+              })
+              .strict(),
+          )
+          .max(200),
+      })
+      .strict(),
+    notes: z.array(z.string().max(600)).max(80),
+    /** Verbatim rows, for the model to check our reading against. */
+    sourceLines: z.array(z.string().max(400)).max(300),
+  })
+  .strict();
+
+export type AnalysisPayload = z.infer<typeof AnalysisPayloadSchema>;
 
 export interface RedactionMap {
   /** pseudonym -> real claim number */

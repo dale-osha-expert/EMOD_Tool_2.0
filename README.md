@@ -88,6 +88,29 @@ malformed or truncated response is withheld rather than rendered partially.
 
 ---
 
+## Protecting the API routes
+
+`/api/analyze` and `/api/ocr` spend the deployment's API key and cannot be
+authenticated — the tool is public and deliberately has no accounts. Three
+layers make abuse expensive rather than impossible:
+
+| Layer | What it stops |
+|---|---|
+| **Payload schema** | `/api/analyze` stringifies its payload into the prompt, so without validation it is a general-purpose LLM proxy on your key. Only a well-formed analysis is accepted, with every array and string capped. |
+| **Origin required** | Browsers send `Origin` on every POST, so its absence means a script. When `ALLOWED_FRAME_ANCESTORS` names specific sites, only those origins (plus the deployment's own) may call the routes. |
+| **Rate limits** | Per caller: 10/min and 60/hour on analyse, 3/min and 10/hour on transcription. Per instance: 200/hour and 40/hour, protecting the shared quota — skipped when the caller brings their own key, since they are spending their own. |
+
+Bodies are capped at 512 KB for analysis and ~16 MB for transcription, checked
+from `Content-Length` before the body is read.
+
+The rate limiter is in-memory and therefore **per serverless instance, not
+global**. Vercel reuses warm instances, so sustained abuse from one source is
+caught; an attacker spreading across cold starts is not. That is a deliberate
+limit — a shared store would mean persistent state, which this tool does not
+have and does not want.
+
+---
+
 ## Privacy
 
 - The PDF is parsed in the browser. On the normal path it is never uploaded.

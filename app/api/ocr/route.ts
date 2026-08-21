@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { guardRequest } from "@/lib/api/guard";
 import { AiError, notConfigured } from "@/lib/llm/errors";
 import {
   ExtractedWorksheetSchema,
@@ -34,11 +35,25 @@ export async function POST(request: Request) {
     );
   }
 
-  const apiKey = body.apiKey?.trim() || process.env.GEMINI_API_KEY?.trim();
+  const userKey = body.apiKey?.trim();
+  const apiKey = userKey || process.env.GEMINI_API_KEY?.trim();
   const model =
     process.env.GEMINI_VISION_MODEL?.trim() ||
     process.env.GEMINI_MODEL?.trim() ||
     "gemini-3.5-flash-lite";
+
+  // Transcription is by far the more expensive route - a whole PDF of tokens
+  // per call - and the more attractive to misuse as a free OCR service, so it
+  // is held to tighter limits than the analysis route.
+  const blocked = guardRequest(request, {
+    route: "ocr",
+    maxBytes: Math.ceil((MAX_BYTES * 4) / 3) + 4096,
+    perMinute: 3,
+    perHour: 10,
+    instancePerHour: 40,
+    usesOwnKey: Boolean(userKey),
+  });
+  if (blocked) return blocked;
 
   if (!apiKey) {
     return NextResponse.json({ error: notConfigured().toJSON() }, { status: 503 });

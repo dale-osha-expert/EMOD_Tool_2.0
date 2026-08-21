@@ -2,14 +2,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { analyzeDocument } from "@/lib/analyze";
 import { buildAnalysisPayload, restoreNarrative } from "@/lib/llm/payload";
 import { POST } from "@/app/api/analyze/route";
+import { resetRateLimits } from "@/lib/api/guard";
 import { loadFixture } from "./helpers";
 
 const analysis = analyzeDocument(loadFixture("interstate-az-fl"));
+const validPayload = buildAnalysisPayload(analysis, { includeIdentity: false })
+  .payload;
 
 function geminiReturns(payload: unknown) {
   vi.stubGlobal(
     "fetch",
-    vi.fn().mockResolvedValue(
+    vi.fn().mockImplementation(async () =>
       new Response(
         JSON.stringify({
           candidates: [
@@ -25,16 +28,24 @@ function geminiReturns(payload: unknown) {
   );
 }
 
-const request = (body: unknown) =>
+const request = (body: unknown, headers: Record<string, string> = {}) =>
   new Request("http://localhost/api/analyze", {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      // Browsers send Origin on every POST; the route requires it.
+      origin: "http://localhost",
+      "x-forwarded-for": `10.0.0.${Math.floor(Math.random() * 250) + 1}`,
+      ...headers,
+    },
     body: JSON.stringify(body),
   });
 
 beforeEach(() => {
   vi.stubEnv("GEMINI_API_KEY", "test-key");
   vi.stubEnv("GEMINI_MODEL", "gemini-3.6-flash");
+  vi.stubEnv("ALLOWED_FRAME_ANCESTORS", "");
+  resetRateLimits();
 });
 
 afterEach(() => {
@@ -87,7 +98,7 @@ describe("the analyze route", () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal("fetch", fetchSpy);
 
-    const response = await POST(request({ payload: {} }));
+    const response = await POST(request({ payload: validPayload }));
 
     expect(response.status).toBe(503);
     expect((await response.json()).error.code).toBe("not_configured");
@@ -101,7 +112,7 @@ describe("the analyze route", () => {
     vi.stubEnv("GEMINI_MODEL", "");
     geminiReturns({ summary: "ok", recommendations: [], discrepancies: [] });
 
-    const response = await POST(request({ payload: {} }));
+    const response = await POST(request({ payload: validPayload }));
     const { model } = await response.json();
 
     expect(model).not.toMatch(/-latest$/);
@@ -111,7 +122,7 @@ describe("the analyze route", () => {
   it("prefers a user-supplied key over the server key", async () => {
     geminiReturns({ summary: "ok", recommendations: [], discrepancies: [] });
 
-    await POST(request({ payload: {}, apiKey: "user-key" }));
+    await POST(request({ payload: validPayload, apiKey: "user-key" }));
 
     const [, init] = (globalThis.fetch as unknown as ReturnType<typeof vi.fn>)
       .mock.calls[0];
