@@ -19,6 +19,7 @@ export function ReportBuilder({
   const [includeIdentity, setIncludeIdentity] = useState(true);
   const [building, setBuilding] = useState(false);
   const [error, setError] = useState<ToolError | null>(null);
+  const [degraded, setDegraded] = useState(false);
 
   const sections = useMemo(() => {
     if (custom) return custom;
@@ -40,6 +41,7 @@ export function ReportBuilder({
   const download = async () => {
     setBuilding(true);
     setError(null);
+    setDegraded(false);
     try {
       // Loaded on demand: the renderer is a large dependency and most sessions
       // never reach this step.
@@ -53,13 +55,26 @@ export function ReportBuilder({
         (s) => s.id,
       );
 
-      const blob = await pdf(
-        <EmodReport
-          analysis={analysis}
-          narrative={narrative}
-          options={{ sections: ordered, title, includeIdentity }}
-        />,
-      ).toBlob();
+      const render = (omitPageNumbers: boolean) =>
+        pdf(
+          <EmodReport
+            analysis={analysis}
+            narrative={narrative}
+            options={{ sections: ordered, title, includeIdentity, omitPageNumbers }}
+          />,
+        ).toBlob();
+
+      // Numbering the pages needs a per-page callback, and on a long report
+      // that makes the PDF layout engine fail. Retry without it rather than
+      // hand back nothing: a report missing its page numbers is still the
+      // report, and the note below says what was lost.
+      let blob: Blob;
+      try {
+        blob = await render(false);
+      } catch {
+        blob = await render(true);
+        setDegraded(true);
+      }
 
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -185,6 +200,14 @@ export function ReportBuilder({
         </label>
 
         {error ? <ErrorPanel error={error} onRetry={download} tone="caution" /> : null}
+
+        {degraded ? (
+          <p className="rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] px-3 py-2 text-[12.5px] leading-relaxed text-[var(--color-ink-muted)]">
+            This report was long enough that page numbering had to be left out —
+            the PDF is otherwise complete. Selecting fewer sections will restore
+            the numbering.
+          </p>
+        ) : null}
 
         <div className="flex flex-wrap items-center gap-3">
           <Button

@@ -3,10 +3,10 @@ import type { ExtractedDocument } from "./parse/textLayer";
 import { computeMod, inputsFromSummary } from "./rating/formula";
 import { buildFindings } from "./rating/findings";
 import { reconcile } from "./rating/reconcile";
+import { inferSplitPoint } from "./rating/claims";
 import {
   averageAnnualSubjectPremium,
   buildScenarios,
-  inferSplitPoint,
 } from "./rating/scenarios";
 import type { Analysis, Worksheet } from "./types";
 

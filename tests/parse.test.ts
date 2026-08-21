@@ -6,7 +6,10 @@ const ws = parseWorksheet(loadFixture("interstate-az-fl"));
 
 describe("worksheet header", () => {
   it("reads the identifying fields", () => {
-    expect(ws.riskId).toBe("900000000");
+    // Identifiers are pseudonymised in the fixture; assert the shape rather
+    // than the stand-in, which changes whenever the fixture is regenerated.
+    expect(ws.riskId).toMatch(/^\d{9}$/);
+    expect(ws.riskName).toBe("SAMPLE MANUFACTURING INC");
     expect(ws.ratingEffectiveDate).toBe("06/01/2024");
     expect(ws.productionDate).toBe("04/08/2024");
     expect(ws.state).toBe("INTERSTATE");
@@ -69,10 +72,10 @@ describe("policy blocks", () => {
 
   it("reads the first block's identifying fields", () => {
     const p = ws.policies[0];
+    expect(p.carrier).toMatch(/^\d{5}$/);
+    expect(p.policyNumber).toMatch(/^[X\d]{7}$/);
     expect(p).toMatchObject({
       state: "02-ARIZONA",
-      carrier: "10995",
-      policyNumber: "5550001",
       effectiveDate: "03/30/2020",
       expirationDate: "03/30/2021",
       subjectPremium: 190856,

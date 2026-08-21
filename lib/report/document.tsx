@@ -150,6 +150,14 @@ export interface ReportOptions {
   sections: SectionId[];
   title: string;
   includeIdentity: boolean;
+  /**
+   * Leave page numbers out of the footer.
+   *
+   * Page numbers require a per-page render callback, and on a long report that
+   * callback makes the layout engine fail outright. This is the fallback the
+   * builder retries with: a report without page numbers beats no report.
+   */
+  omitPageNumbers?: boolean;
 }
 
 export function EmodReport({
@@ -230,13 +238,11 @@ export function EmodReport({
             {narrative.recommendations.map((rec, i) => (
               <View
                 key={i}
+               
                 style={[
                   styles.item,
-                  rec.priority === "high"
-                    ? styles.itemCaution
-                    : {},
+                  rec.priority === "high" ? styles.itemCaution : {},
                 ]}
-                wrap={false}
               >
                 <Text style={styles.itemTitle}>
                   {i + 1}. {rec.title}
@@ -262,11 +268,13 @@ export function EmodReport({
             Generated {generated} · Figures calculated from the worksheet;
             suggestions are AI-assisted and worth confirming.
           </Text>
-          <Text
-            render={({ pageNumber, totalPages }) =>
-              `${pageNumber} of ${totalPages}`
-            }
-          />
+          {options.omitPageNumbers ? null : (
+            <Text
+              render={({ pageNumber, totalPages }) =>
+                `${pageNumber} of ${totalPages}`
+              }
+            />
+          )}
         </View>
       </Page>
     </Document>
@@ -375,6 +383,7 @@ function FindingsSection({ analysis }: { analysis: Analysis }) {
       {analysis.findings.map((f) => (
         <View
           key={f.id}
+         
           style={[
             styles.item,
             f.severity === "error"
@@ -383,7 +392,6 @@ function FindingsSection({ analysis }: { analysis: Analysis }) {
                 ? styles.itemCaution
                 : {},
           ]}
-          wrap={false}
         >
           <Text style={styles.itemTitle}>{f.title}</Text>
           <Text style={styles.muted}>{f.detail}</Text>
@@ -506,7 +514,13 @@ function PoliciesSection({ analysis }: { analysis: Analysis }) {
     <View break>
       <Text style={styles.h2}>Policy and payroll detail</Text>
       {policies.map((p, i) => (
-        <View key={i} wrap={false} style={{ marginBottom: 9 }}>
+        // Long blocks must be allowed to split across pages. Forcing one to
+        // stay whole with wrap={false} makes the layout engine fail outright
+        // once the block is taller than the space left on the page - which is
+        // exactly what broke the full report on a nineteen-policy worksheet.
+        // minPresenceAhead is not a safe substitute here: it reintroduces the
+        // same failure. Only single-line table rows keep wrap={false}.
+        <View key={i} style={{ marginBottom: 9 }}>
           <Text style={styles.h3}>
             {p.state} · {p.policyNumber ?? "policy number not shown"} ·{" "}
             {p.effectiveDate ?? "-"} to {p.expirationDate ?? "-"}
@@ -616,7 +630,7 @@ function MethodologySection({
   usedAi: boolean;
 }) {
   return (
-    <View wrap={false}>
+    <View>
       <Text style={styles.h2}>Method and limitations</Text>
 
       <Text style={styles.h3}>How the figures were derived</Text>

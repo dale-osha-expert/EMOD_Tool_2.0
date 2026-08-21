@@ -54,6 +54,10 @@ const STATE_COLUMNS: ColumnSpec[] = [
   { name: "ballast", match: /^BALLAST/ },
   { name: "actualIncurred", match: /^ACT INC/ },
   { name: "actualPrimary", match: /^ACT PRIM/ },
+  // Added to the summary grid in the 2025 form. Optional so the same spec
+  // still reads earlier layouts, where its absence widens the actual-primary
+  // column rather than splitting it.
+  { name: "splitPoint", match: /^SPLIT/, optional: true },
 ];
 
 const FACTOR_COLUMNS: ColumnSpec[] = [
@@ -274,6 +278,7 @@ function readSummaryRow(
     ballast: ballast ?? 0,
     actualIncurred: actualIncurred ?? 0,
     actualPrimary: actualPrimary ?? 0,
+    splitPoint: figure(numericCell(cells, "splitPoint")),
   };
 }
 

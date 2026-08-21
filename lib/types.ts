@@ -113,6 +113,12 @@ export const SummaryRowSchema = z.object({
   actualIncurred: z.number(),
   /** (I) Actual primary losses. */
   actualPrimary: z.number(),
+  /**
+   * The state's approved primary/excess split point. Printed as its own column
+   * from the 2025 form onwards; null on earlier layouts, where it can still be
+   * inferred from any claim whose primary has been capped.
+   */
+  splitPoint: z.number().nullable().default(null),
 });
 export type SummaryRow = z.infer<typeof SummaryRowSchema>;
 

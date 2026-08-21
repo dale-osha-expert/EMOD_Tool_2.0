@@ -209,16 +209,33 @@ npm run typecheck
 npm run build
 ```
 
-The unit suite runs against `fixtures/interstate-az-fl.json` — real page
-geometry from a real interstate AZ/FL worksheet, with every identifying value
-replaced by a same-length stand-in. Committing derived geometry rather than the
-source PDF keeps a real company's payroll and injury data out of the repository
-while still exercising real coordinates.
+The unit suite runs against fixtures built from real worksheets — genuine page
+geometry, with every identifying value replaced by a same-length stand-in.
+Committing derived geometry rather than the source PDFs keeps real payroll and
+injury data out of the repository while still exercising real coordinates.
 
-It asserts the full chain end to end: recomputed mod `.84` matching the printed
-figure, loss-free minimum `.62`, removing the one open claim giving `.63`, the
-`$16,500` split point inferred from the claim data, and the `1,956` ERA
-medical-only delta between the state rows and the rated totals.
+| Fixture | What it covers |
+|---|---|
+| `interstate-az-fl` | 2024 interstate form, two states, ERA medical-only discount, one capped open claim |
+| `interstate-az-fl-tx-2025` | 2025 form: adds the split-point column, three states, 19 policy periods, ARAP and FLARAP above unity, and a `#` limited-loss claim |
+| `intrastate-tx-loss-free` | 2017 single-state form, no split-point column, no surcharges, and **no claims at all** |
+
+Between them they assert the full chain: recomputed mods of `.84`, `1.10` and
+`.81` each matching the printed figure, a loss-free minimum of `.62`, the
+`1,956` ERA delta between the state rows and the rated totals, the `$16,500`
+split point inferred from claim data, and the `$82,337` loss limitation
+recovered from the 2025 totals row.
+
+Two more test groups guard behaviour that is easy to break:
+
+- **Documents that are not ratings.** A training deck or explainer can quote
+  every column heading without being a worksheet. Those must fail with a stated
+  reason rather than a guess.
+- **Report rendering.** Every section of every fixture is rendered to a real
+  PDF, plus a pagination stress case several times larger than any worksheet
+  seen so far. Page numbering needs a per-page callback that the PDF layout
+  engine cannot survive on a very long report, so the builder retries without
+  it; the stress test is what holds that fallback in place.
 
 ### End-to-end
 
@@ -244,9 +261,16 @@ node scripts/make-fixture.mjs worksheet.pdf fixtures/name.json "REDACTED CO"
 
 ## Limitations
 
-- Built for **NCCI** worksheets. Independent bureau states with their own forms
-  (California's WCIRB among them) are not supported; the parser will say so
-  rather than guess.
+- Built for **NCCI** worksheets. Verified against the 2017, 2024 and 2025 form
+  layouts, interstate and intrastate. Independent bureau states with their own
+  forms (California's WCIRB among them) are not supported; the parser says so
+  rather than guessing.
+- A claim flagged as a **limited or catastrophic loss** enters the rating at
+  less than its printed value, and the worksheet never states by how much. The
+  gap between the printed claims and the printed totals is used to recover it,
+  which is exact when one claim is flagged. With several flagged claims the
+  reduction is shared between them in proportion, which is an assumption rather
+  than a fact.
 - Premium figures are estimates scaled from historical subject premium, not
   quotations.
 - The tool sees one document. It has no access to claim files, reserving

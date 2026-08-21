@@ -1,11 +1,11 @@
 import {
-  MEDICAL_ONLY_INJURY_TYPE,
   NON_RATABLE_CLASS_CODES,
   type ReconcileCheck,
   type ReconcileResult,
   type Severity,
   type Worksheet,
 } from "../types";
+import { ratedContributions } from "./claims";
 import { computeMod, inputsFromSummary } from "./formula";
 
 /**
@@ -193,28 +193,29 @@ export function reconcile(ws: Worksheet): ReconcileResult {
   }
 
   /* --- Claims roll up to the rated actual losses ----------------------- *
-   * Claims are printed pre-ERA, so medical-only claims contribute only
-   * (1 - eraReduction) of their dollars to the rated totals. This is a warning
-   * rather than an error because worksheets may aggregate cases of $2,000 or
-   * less into a starred summary row instead of listing them individually.     */
+   * Claims are printed before both adjustments the rating applies: ERA
+   * discounts medical-only dollars, and a limited or catastrophic claim enters
+   * at less than its printed incurred. `ratedContributions` accounts for both,
+   * so what remains here is a genuine gap - most often a worksheet that rolls
+   * cases of $2,000 or less into a starred summary line instead of listing
+   * them, which is why this is a warning rather than an error.                */
   if (t && ws.claims.length > 0) {
-    let primary = 0;
-    let incurred = 0;
-    for (const c of ws.claims) {
-      const era =
-        ws.eraReduction !== null && c.injuryType === MEDICAL_ONLY_INJURY_TYPE
-          ? 1 - ws.eraReduction
-          : 1;
-      primary += c.actualPrimary * era;
-      incurred += c.actualIncurred * era;
-    }
+    const contributions = ratedContributions(ws);
+    const totals = [...contributions.byClaim.values()].reduce(
+      (acc, c) => ({
+        primary: acc.primary + c.primary,
+        incurred: acc.incurred + c.primary + c.excess,
+      }),
+      { primary: 0, incurred: 0 },
+    );
+
     checks.push(
       check(
         "claims.primary-rollup",
-        "Σ claim primary (after ERA) = (I)",
+        "\u03a3 claim primary (after ERA) = (I)",
         "Claim roll-up",
         t.actualPrimary,
-        primary,
+        totals.primary,
         DOLLAR_TOLERANCE,
         "warning",
       ),
@@ -222,10 +223,10 @@ export function reconcile(ws: Worksheet): ReconcileResult {
     checks.push(
       check(
         "claims.incurred-rollup",
-        "Σ claim incurred (after ERA) = (H)",
+        "\u03a3 claim incurred (after ERA and loss limitation) = (H)",
         "Claim roll-up",
         t.actualIncurred,
-        incurred,
+        totals.incurred,
         DOLLAR_TOLERANCE,
         "warning",
       ),

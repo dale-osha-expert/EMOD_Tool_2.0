@@ -5,47 +5,15 @@ import {
   type Scenario,
   type Worksheet,
 } from "../types";
+import {
+  capForClaim,
+  eraFactor,
+  inferSplitPoint,
+  ratedContributions,
+  type ClaimContributions,
+} from "./claims";
 import { computeMod, type ModInputs, roundHalfUp } from "./formula";
 
-/**
- * Infer the NCCI split point from the worksheet itself.
- *
- * The split point is the dollar level above which losses become excess. Any
- * claim whose actual primary is less than its actual incurred has been capped,
- * and that cap is the split point. Reading it off the document avoids buying
- * NCCI's state split-point tables, and is exact for the rating in hand rather
- * than an approximation from a published table that may not match this state
- * and effective date.
- *
- * Returns null when no claim is capped, meaning every claim falls below the
- * split point and its value cannot be observed from this document.
- */
-export function inferSplitPoint(claims: Claim[]): number | null {
-  const capped = claims.filter((c) => c.actualPrimary < c.actualIncurred);
-  if (capped.length === 0) return null;
-  return Math.max(...capped.map((c) => c.actualPrimary));
-}
-
-/**
- * How much of a claim's dollars actually reach the rating. Claims are printed
- * pre-ERA; medical-only claims are discounted before they enter the totals row.
- */
-export function eraFactor(claim: Claim, eraReduction: number | null): number {
-  if (eraReduction === null) return 1;
-  return claim.injuryType === MEDICAL_ONLY_INJURY_TYPE ? 1 - eraReduction : 1;
-}
-
-/** A claim's contribution to the rated (A)-(I) totals row. */
-export function ratedContribution(
-  claim: Claim,
-  eraReduction: number | null,
-): { primary: number; excess: number } {
-  const f = eraFactor(claim, eraReduction);
-  return {
-    primary: claim.actualPrimary * f,
-    excess: (claim.actualIncurred - claim.actualPrimary) * f,
-  };
-}
 
 /**
  * Average annual subject premium across the experience period.
@@ -83,6 +51,7 @@ export interface ScenarioContext {
   splitPoint: number | null;
   subjectPremium: number | null;
   eraReduction: number | null;
+  contributions: ClaimContributions;
 }
 
 function makeScenario(
@@ -126,6 +95,7 @@ export function buildScenarios(ws: Worksheet, current: ModComputation): Scenario
     splitPoint: inferSplitPoint(ws.claims),
     subjectPremium: averageAnnualSubjectPremium(ws),
     eraReduction: ws.eraReduction,
+    contributions: ratedContributions(ws),
   };
 
   const scenarios: Scenario[] = [];
@@ -143,7 +113,7 @@ export function buildScenarios(ws: Worksheet, current: ModComputation): Scenario
 
   /* --- Remove one claim ----------------------------------------------- */
   for (const claim of ws.claims) {
-    const { primary, excess } = ratedContribution(claim, ctx.eraReduction);
+    const { primary, excess } = ctx.contributions.byClaim.get(claim)!;
     if (primary === 0 && excess === 0) continue;
     scenarios.push(
       makeScenario(
@@ -164,22 +134,27 @@ export function buildScenarios(ws: Worksheet, current: ModComputation): Scenario
    * Only open claims have reserves still to move. Reducing incurred moves the
    * primary portion dollar-for-dollar until the split point cap is reached;
    * beyond that the reduction lands in excess, which is only W-weighted.      */
-  const cap = ctx.splitPoint ?? Number.POSITIVE_INFINITY;
   for (const claim of ws.claims) {
     if (claim.status !== "O") continue;
+    const cap = capForClaim(claim);
+    const old = ctx.contributions.byClaim.get(claim)!;
+
     for (const pct of [0.25, 0.5, 0.75]) {
-      const newIncurred = claim.actualIncurred * (1 - pct);
+      // A limited claim's rated value is lower than its printed one, so scale
+      // the reduction against what actually reaches the rating.
+      const ratedIncurred =
+        (old.primary + old.excess) / Math.max(eraFactor(claim, ctx.eraReduction), 1e-9);
+      const newIncurred = ratedIncurred * (1 - pct);
       const newPrimary = Math.min(newIncurred, cap);
       const f = eraFactor(claim, ctx.eraReduction);
-      const old = ratedContribution(claim, ctx.eraReduction);
 
       scenarios.push(
         makeScenario(
           ctx,
           `reserve:${claim.claimNumber}:${pct}`,
           `Claim ${claim.claimNumber} settles ${Math.round(pct * 100)}% below current reserve`,
-          `Models this open claim closing at ${Math.round((1 - pct) * 100)}% of its current incurred value${
-            ctx.splitPoint !== null
+          `Models this open claim closing at ${Math.round((1 - pct) * 100)}% of the value that currently reaches the rating${
+            Number.isFinite(cap)
               ? `, with the primary portion capped at the $${cap.toLocaleString()} split point`
               : ""
           }.`,
@@ -212,7 +187,7 @@ export function buildScenarios(ws: Worksheet, current: ModComputation): Scenario
       let addedPrimary = 0;
       let addedExcess = 0;
       for (const c of medOnly) {
-        const rated = ratedContribution(c, ctx.eraReduction);
+        const rated = ctx.contributions.byClaim.get(c)!;
         addedPrimary += c.actualPrimary - rated.primary;
         addedExcess += c.actualIncurred - c.actualPrimary - rated.excess;
       }
@@ -245,9 +220,21 @@ export function buildScenarios(ws: Worksheet, current: ModComputation): Scenario
  * one is already discounted and largely settled.
  */
 function describeRemoval(claim: Claim, ctx: ScenarioContext): string {
+  const rated = ctx.contributions.byClaim.get(claim)!;
   const amount = `$${Math.round(claim.actualIncurred).toLocaleString("en-US")}`;
-  const capped =
-    ctx.splitPoint !== null && claim.actualPrimary < claim.actualIncurred;
+  const capped = claim.actualPrimary < claim.actualIncurred;
+
+  if (rated.limited) {
+    const entering = Math.round(
+      (rated.primary + rated.excess) /
+        Math.max(eraFactor(claim, ctx.eraReduction), 1e-9),
+    );
+    return (
+      `This claim is printed at ${amount} incurred, but it is flagged as limited, so only about ` +
+      `$${entering.toLocaleString("en-US")} of it reaches the rating. The figures here reflect the ` +
+      `limited value, not the printed one.`
+    );
+  }
 
   const opening =
     claim.status === "O"

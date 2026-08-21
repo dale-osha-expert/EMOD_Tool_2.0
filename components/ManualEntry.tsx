@@ -113,6 +113,7 @@ export function ManualEntry({
       ballast: t.ballast,
       actualIncurred: t.actualIncurred,
       actualPrimary: t.actualPrimary,
+      splitPoint: null,
     };
 
     onSubmit({

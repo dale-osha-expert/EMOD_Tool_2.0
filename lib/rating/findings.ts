@@ -8,7 +8,7 @@ import {
   type Scenario,
   type Worksheet,
 } from "../types";
-import { inferSplitPoint } from "./scenarios";
+import { inferSplitPoint, ratedContributions } from "./claims";
 
 const money = (n: number) =>
   `$${Math.round(n).toLocaleString("en-US")}`;
@@ -135,6 +135,55 @@ export function buildFindings(
         });
       }
     }
+  }
+
+  /* --- 3b. Claims cut down by the loss limitation ---------------------- */
+  const contributions = ratedContributions(ws);
+  for (const claim of ws.claims) {
+    const rated = contributions.byClaim.get(claim);
+    if (!rated?.limited) continue;
+
+    const era = ws.eraReduction !== null && claim.injuryType === MEDICAL_ONLY_INJURY_TYPE
+      ? 1 - ws.eraReduction
+      : 1;
+    const entering = (rated.primary + rated.excess) / Math.max(era, 1e-9);
+    const removed = claim.actualIncurred - entering;
+
+    findings.push({
+      id: `limited:${claim.claimNumber}`,
+      severity: "info",
+      title: `Claim ${claim.claimNumber} is capped by the loss limitation, not counted in full`,
+      detail:
+        `The worksheet prints ${money(claim.actualIncurred)} for this claim, but flags it as a limited ` +
+        `loss. A single accident enters the rating only up to the state's loss limitation, and the ` +
+        `totals on this worksheet imply about ${money(entering)} of it was actually rated — roughly ` +
+        `${money(removed)} was set aside. That is worth knowing before reacting to the printed figure: ` +
+        `the claim is already costing you less than it appears to, and reducing it further has a ` +
+        `correspondingly smaller effect. The scenarios below use the limited value.`,
+      evidence: [
+        `Printed incurred: ${money(claim.actualIncurred)}`,
+        `Implied rated value: ${money(entering)}`,
+        `Flags: ${claim.flags.join(" ")}`,
+      ],
+      dollarImpact: null,
+      claimNumber: claim.claimNumber,
+    });
+  }
+
+  if (contributions.unexplained > 1) {
+    findings.push({
+      id: "claims:unexplained-rollup",
+      severity: "warning",
+      title: "The listed claims add up to more than the rated total",
+      detail:
+        `Adding up the claims on this worksheet, after the medical-only discount and any loss ` +
+        `limitation, gives about ${money(contributions.unexplained)} more than the totals row states. ` +
+        `Worksheets sometimes roll cases of $2,000 or less into a single starred line rather than ` +
+        `listing them, which can explain a small gap. A large one may be worth querying, since the ` +
+        `claim-level figures below would then not tell the whole story.`,
+      evidence: [`Unaccounted difference: ${money(contributions.unexplained)}`],
+      dollarImpact: null,
+    });
   }
 
   /* --- 4. Medical-only claims and the ERA discount -------------------- */
@@ -321,23 +370,31 @@ export function buildFindings(
   const minScenario = scenarios.find((s) => s.id === "minimum");
   if (minScenario) {
     const room = computed.mod - minScenario.mod;
+    const atFloor = room < 0.005;
+
     findings.push({
       id: "position",
       severity: computed.mod > 1 ? "warning" : "info",
-      title:
-        computed.mod > 1
+      title: atFloor
+        ? `Mod of ${computed.mod.toFixed(2)} is already the best this experience period can produce`
+        : computed.mod > 1
           ? `Mod of ${computed.mod.toFixed(2)} is above unity, adding roughly ${Math.round((computed.mod - 1) * 100)}% to manual premium`
           : `Mod of ${computed.mod.toFixed(2)} is a credit against manual premium`,
-      detail:
-        `The loss-free minimum for this experience period is ${minScenario.mod.toFixed(2)}, so there is ` +
-        `${room.toFixed(2)} of movement between the current mod and the best this period could produce. ` +
-        `That gap is the total the loss experience is costing; individual claims below account for parts of it.`,
+      detail: atFloor
+        ? `No rated losses appear on this experience period, so the mod is sitting at its loss-free ` +
+          `minimum of ${minScenario.mod.toFixed(2)}. Nothing in the claim experience can improve it further. ` +
+          `The mod is below 1.00 only to the extent the expected-loss and ballast figures allow, and those ` +
+          `follow from payroll and classification rather than from claims — so if a lower factor is the ` +
+          `goal, a classification and payroll review is the only remaining avenue.`
+        : `The loss-free minimum for this experience period is ${minScenario.mod.toFixed(2)}, so there is ` +
+          `${room.toFixed(2)} of movement between the current mod and the best this period could produce. ` +
+          `That gap is the total the loss experience is costing; individual claims below account for parts of it.`,
       evidence: [
         `Current mod: ${computed.mod.toFixed(2)}`,
         `Loss-free minimum: ${minScenario.mod.toFixed(2)}`,
         `Gap: ${room.toFixed(2)}`,
       ],
-      dollarImpact: minScenario.premiumDelta,
+      dollarImpact: atFloor ? null : minScenario.premiumDelta,
     });
   }
 

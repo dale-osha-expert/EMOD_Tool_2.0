@@ -98,9 +98,11 @@ try {
     Number.isFinite(current) && current === printed,
     `${stats["current mod"]} vs ${stats["as printed"]}`,
   );
+  // A loss-free risk sits exactly at its minimum, so equality is correct here;
+  // only a minimum above the current mod would be a real defect.
   check(
-    "loss-free minimum is below the current mod",
-    Number.isFinite(minimum) && minimum < current,
+    "loss-free minimum is at or below the current mod",
+    Number.isFinite(minimum) && minimum <= current,
     JSON.stringify(stats),
   );
 
