@@ -88,6 +88,58 @@ malformed or truncated response is withheld rather than rendered partially.
 
 ---
 
+## SEO, AEO and the funnel
+
+The page is a lead magnet for CertifyMe properties, so it has to rank and be
+quotable as well as work.
+
+**Everything is server-rendered.** The tool runs in the browser, but the hero,
+how-it-works, FAQ and glossary are server components — content that only
+exists after hydration is content a crawler may never see. The served HTML is
+around 94 KB with every FAQ answer present before any JavaScript runs, and the
+FAQ uses `<details>` so collapsed answers are still in the markup.
+
+**Structured data** is built in `lib/site/schema.ts` as a single `@graph`:
+Organization, WebSite, WebPage, WebApplication, FAQPage and DefinedTermSet.
+Everything marked up mirrors visible page content — marking up something the
+page does not say is against Google's guidelines and gets sites ignored.
+
+**`public/llms.txt`** states what the tool does, the formula it applies and the
+facts worth citing, in the plain structured form answer engines prefer.
+
+`/embed` is `noindex` and disallowed in `robots.txt`: it is the same tool
+without page furniture, and indexing it would split ranking signals across two
+copies of one page.
+
+### Brand configuration
+
+Every brand-specific fact lives in `lib/site/brand.ts`. Descriptions are blank
+until confirmed, and components render a clean link rather than placeholder
+prose when one is unset — an SEO page that misstates what a company sells is
+worse than no page, and an answer engine will repeat the mistake.
+
+| Setting | Purpose |
+|---|---|
+| `PUBLISHER.logo` | Path to a logo in `public/`. Unset, the byline renders a text wordmark. |
+| `SITE_URL` | Canonical origin, from `NEXT_PUBLIC_SITE_URL`. Drives canonical, sitemap, Open Graph and schema. |
+| `NEXT_PUBLIC_AI_ENABLED` | `true` runs the AI analysis in this deployment. Unset, the panel describes what the analysis adds and links to Compliance Hub. |
+
+One codebase serves both deployments: the public funnel with the AI panel as an
+upsell, and Compliance Hub with it switched on. Everything else — the
+recalculation, scenarios, findings and report — is identical and never gated.
+
+### Measurement
+
+Vercel Web Analytics, loaded as the platform script rather than
+`@vercel/analytics`, which pulls in a SvelteKit peer that conflicts with the
+test toolchain. Cookieless, stores nothing on the device, and limited to an
+allowlist of three events in `lib/site/analytics.ts`: a CTA click, a successful
+parse, a report download. Nothing from a worksheet is ever sent — no company
+name, no claim number, no figure, not even a filename. The allowlist is what
+keeps that true as the page grows.
+
+---
+
 ## Protecting the API routes
 
 `/api/analyze` and `/api/ocr` spend the deployment's API key and cannot be

@@ -12,6 +12,7 @@ import {
   type Analysis,
   type AiNarrative,
 } from "../types";
+import { DESTINATIONS, PUBLISHER, TOOL_NAME } from "../site/brand";
 import type { SectionId } from "./presets";
 
 /* Built-in PDF fonts only: no network fetch, so the report renders offline. */
@@ -116,6 +117,32 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     marginBottom: 3,
   },
+  brandBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    marginBottom: 4,
+  },
+  brand: { fontSize: 8, color: "#5a6472" },
+  brandName: { fontSize: 8, fontFamily: "Helvetica-Bold", color: "#1b5e8a" },
+  ctaCard: {
+    borderWidth: 1,
+    borderColor: "#c9dced",
+    backgroundColor: "#f2f7fb",
+    borderRadius: 3,
+    padding: 9,
+    marginBottom: 7,
+  },
+  ctaName: { fontFamily: "Helvetica-Bold", marginBottom: 2 },
+  ctaUrl: { fontSize: 8, color: "#1b5e8a", marginTop: 3 },
+  pageNumber: {
+    position: "absolute",
+    bottom: 26,
+    right: 44,
+    paddingTop: 5,
+    fontSize: 7,
+    color: "#8b95a3",
+  },
   footer: {
     position: "absolute",
     bottom: 26,
@@ -126,8 +153,6 @@ const styles = StyleSheet.create({
     paddingTop: 5,
     fontSize: 7,
     color: "#8b95a3",
-    flexDirection: "row",
-    justifyContent: "space-between",
   },
 });
 
@@ -184,6 +209,14 @@ export function EmodReport({
       creator="Experience Modification Analyser"
     >
       <Page size="LETTER" style={styles.page}>
+        <View style={styles.brandBar}>
+          <Text style={styles.brand}>
+            {TOOL_NAME} &nbsp;·&nbsp; by{" "}
+            <Text style={styles.brandName}>{PUBLISHER.name}</Text>
+          </Text>
+          <Text style={styles.brand}>{PUBLISHER.url.replace(/^https:\/\//, "")}</Text>
+        </View>
+
         <Text style={styles.title}>{options.title}</Text>
         {options.includeIdentity && ws.riskName ? (
           <Text style={styles.subtitle}>
@@ -263,21 +296,67 @@ export function EmodReport({
           <MethodologySection analysis={analysis} usedAi={Boolean(narrative)} />
         ) : null}
 
+        <NextSteps />
+
         <View style={styles.footer} fixed>
           <Text>
-            Generated {generated} · Figures calculated from the worksheet;
-            suggestions are AI-assisted and worth confirming.
+            {TOOL_NAME} by {PUBLISHER.name} · Generated {generated} · Figures
+            calculated from the worksheet; any suggestions are worth confirming.
           </Text>
-          {options.omitPageNumbers ? null : (
-            <Text
-              render={({ pageNumber, totalPages }) =>
-                `${pageNumber} of ${totalPages}`
-              }
-            />
-          )}
         </View>
+        {options.omitPageNumbers ? null : (
+          // Kept out of the bordered flex row above and positioned on its own.
+          // The per-page render callback is what the layout engine struggles
+          // with on a long report; giving it the simplest possible box to
+          // resolve is what makes the difference.
+          <Text
+            style={styles.pageNumber}
+            fixed
+            render={({ pageNumber, totalPages }) =>
+              `${pageNumber} of ${totalPages}`
+            }
+          />
+        )}
       </Page>
     </Document>
+  );
+}
+
+/**
+ * Where the report hands off.
+ *
+ * Kept to the end, after the analysis has earned the reader's attention, and
+ * written as what each destination is for rather than as an advertisement -
+ * a report someone forwards to their broker should not read like a flyer.
+ */
+function NextSteps() {
+  const described = DESTINATIONS.filter((d) => d.description.trim().length > 0);
+
+  return (
+    // No wrap={false} here: a block that cannot split fails the layout engine
+    // outright once it is taller than the space left on the page, which is the
+    // failure documented against the policy section below.
+    <View break>
+      <Text style={styles.h2}>Next steps</Text>
+      <Text style={[styles.p, styles.muted]}>
+        This analysis was produced with {TOOL_NAME}, a free tool from{" "}
+        {PUBLISHER.name.replace(/\.net$/, "")} ({PUBLISHER.url.replace(/^https:\/\//, "")}).
+        You can re-run it on any NCCI experience rating worksheet at no cost;
+        the document is read in your browser and is never uploaded.
+      </Text>
+
+      {(described.length > 0 ? described : DESTINATIONS).map((d) => (
+        <View key={d.url} style={styles.ctaCard}>
+          <Text style={styles.ctaName}>{d.name}</Text>
+          {d.description.trim().length > 0 ? (
+            <Text style={styles.muted}>{d.description}</Text>
+          ) : null}
+          <Text style={styles.ctaUrl}>
+            {d.url.replace(/^https:\/\//, "")}
+          </Text>
+        </View>
+      ))}
+    </View>
   );
 }
 

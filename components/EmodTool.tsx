@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useEmodTool } from "@/lib/useEmodTool";
 import { AiPanel } from "./AiPanel";
+import { AiUpsell } from "./site/AiUpsell";
 import { ClaimsTable } from "./ClaimsTable";
 import { ErrorPanel } from "./ErrorPanel";
 import { FindingsList } from "./FindingsList";
@@ -14,6 +15,8 @@ import { ScanConsent } from "./ScanConsent";
 import { ScenariosPanel } from "./ScenariosPanel";
 import { Uploader } from "./Uploader";
 import { Button } from "./ui";
+import { AI_ENABLED } from "@/lib/site/brand";
+import { track } from "@/lib/site/analytics";
 
 /**
  * The whole tool.
@@ -23,10 +26,21 @@ import { Button } from "./ui";
  */
 export function EmodTool({ chrome = true }: { chrome?: boolean }) {
   const tool = useEmodTool();
+  const reported = useRef(false);
   const [manual, setManual] = useState(false);
   const [showUnverified, setShowUnverified] = useState(false);
 
   const busy = tool.stage === "reading" || tool.stage === "transcribing";
+
+  // Counts that a worksheet was read successfully. Carries nothing about the
+  // document: not its figures, not its name, not even its size.
+  useEffect(() => {
+    if (tool.stage === "ready" && !reported.current) {
+      reported.current = true;
+      track("worksheet_parsed", { source: tool.source });
+    }
+    if (tool.stage === "idle") reported.current = false;
+  }, [tool.stage, tool.source]);
 
   // Figures that do not reconcile are withheld until the user has seen why and
   // chosen to look anyway. Showing a confident mod built on values we know do
@@ -50,15 +64,6 @@ export function EmodTool({ chrome = true }: { chrome?: boolean }) {
               browser, and nothing is saved.
             </p>
           </div>
-          {tool.stage === "ready" ? (
-            <Button variant="secondary" onClick={() => {
-                tool.reset();
-                setManual(false);
-                setShowUnverified(false);
-              }}>
-              New worksheet
-            </Button>
-          ) : null}
         </header>
       ) : null}
 
@@ -145,6 +150,32 @@ export function EmodTool({ chrome = true }: { chrome?: boolean }) {
       {/* ---- Results ---- */}
       {tool.stage === "ready" && tool.analysis ? (
         <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[13px] text-[var(--color-ink-muted)]">
+              {tool.fileName ? (
+                <>
+                  Read from{" "}
+                  <span className="font-medium text-[var(--color-ink)]">
+                    {tool.fileName}
+                  </span>
+                </>
+              ) : (
+                "Calculated from the figures you entered"
+              )}
+            </p>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                tool.reset();
+                setManual(false);
+                setShowUnverified(false);
+              }}
+            >
+              New worksheet
+            </Button>
+          </div>
+
           {tool.source === "transcribed" ? (
             <p className="rounded-md border border-[var(--color-caution)]/35 bg-[var(--color-caution-soft)] px-3 py-2 text-[12.5px] leading-relaxed">
               These figures came from an AI transcription of a scanned document,
@@ -207,14 +238,18 @@ export function EmodTool({ chrome = true }: { chrome?: boolean }) {
           ) : null}
 
           {!blocked ? (
-          <AiPanel
-            ai={tool.ai}
-            onRequest={tool.requestNarrative}
-            userKey={tool.userKey}
-            onUserKeyChange={tool.setUserKey}
-            shareIdentity={tool.shareIdentity}
-            onShareIdentityChange={tool.setShareIdentity}
-          />
+            AI_ENABLED ? (
+              <AiPanel
+                ai={tool.ai}
+                onRequest={tool.requestNarrative}
+                userKey={tool.userKey}
+                onUserKeyChange={tool.setUserKey}
+                shareIdentity={tool.shareIdentity}
+                onShareIdentityChange={tool.setShareIdentity}
+              />
+            ) : (
+              <AiUpsell />
+            )
           ) : null}
 
           {!blocked ? (

@@ -1,0 +1,64 @@
+# Experience Mod Analyzer
+
+> A free browser-based calculator that recalculates a workers compensation
+> experience modification rate (EMR) from an NCCI experience rating worksheet,
+> verifies the worksheet against its own arithmetic, prices each claim's effect
+> on the mod, and exports a PDF report. Published by CertifyMe.net.
+
+The worksheet PDF is parsed locally in the browser using its text layer. It is
+never uploaded and nothing is stored; refreshing the page clears everything.
+
+## What it calculates
+
+- The experience modification factor, recomputed from the NCCI formula and
+  compared against the factor printed on the worksheet.
+- The loss-free minimum: the lowest mod the experience period could produce
+  with no losses at all. A hard floor set by payroll, classification and
+  expected losses, not by claims.
+- Each claim's contribution, in mod points and in estimated premium.
+- Reserve-reduction scenarios for open claims, capped at the split point.
+- Deterministic checks of the worksheet's internal arithmetic: payroll divided
+  by 100 times the expected loss rate equals expected losses; expected losses
+  times the D-ratio equals expected primary; excess equals incurred less
+  primary; and the mod equals its own numerator over its denominator.
+
+## The formula
+
+Mod = (actual primary + stabilizing value + W x actual excess)
+    / (expected primary + stabilizing value + W x expected excess)
+
+where the stabilizing value is expected excess x (1 - W) + ballast, and W is
+the weighting factor printed as (A) on the worksheet. The denominator reduces
+to expected losses plus ballast, so each claim's effect on the mod is
+proportional to its primary losses plus its weighted excess losses.
+
+## Key facts
+
+- A mod of 1.00 is average. Below 1.00 is a credit; above 1.00 is a debit.
+- The experience period is normally three policy years ending about one year
+  before the rating effective date.
+- The split point divides each claim into primary and excess losses. It varies
+  by state and over time, and appears as its own column on worksheets from 2025.
+- Excess losses enter the calculation only at the weighting factor, so primary
+  dollars move the mod far more than excess dollars.
+- In states applying the Experience Rating Adjustment, medical-only claims
+  (injury type 06) have a share of their loss dollars removed, commonly 70%.
+- A claim flagged as a limited loss enters the rating at less than its printed
+  incurred value.
+
+## Pages
+
+- [Experience Mod Analyzer](https://emod-tool-2-0.vercel.app/): the tool, how
+  it works, FAQ, and a glossary of worksheet terms.
+
+## Publisher
+
+- [CertifyMe.net](https://certifyme.net)
+- [Compliance Hub](https://compliance-hub.cloud)
+- [CertifyMeOnline.net](https://certifymeonline.net)
+
+## Notes
+
+Not affiliated with or endorsed by NCCI. Not legal, actuarial or insurance
+advice. The tool reads one document and cannot see claim files, reserving
+rationale or payroll records, so its observations are points to verify.

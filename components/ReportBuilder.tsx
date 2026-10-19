@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { AiNarrative, Analysis } from "@/lib/types";
 import { PRESETS, SECTIONS, type SectionId } from "@/lib/report/presets";
+import { track } from "@/lib/site/analytics";
 import { Button, Card, CardHeader, cx, Spinner } from "./ui";
 import { ErrorPanel } from "./ErrorPanel";
 import type { ToolError } from "@/lib/useEmodTool";
@@ -75,6 +76,13 @@ export function ReportBuilder({
         blob = await render(true);
         setDegraded(true);
       }
+
+      // Counts that a report was produced, and which preset. Nothing about
+      // the worksheet behind it.
+      track("report_downloaded", {
+        preset: custom ? "custom" : presetId,
+        sections: sections.length,
+      });
 
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
