@@ -123,6 +123,9 @@ worse than no page, and an answer engine will repeat the mistake.
 | `PUBLISHER.logo` | Full logo in `public/`, used by the Organization schema. |
 | `PUBLISHER.wordmark` | Wordmark cropped from the same logo, used by the byline. Unset, the byline renders a text wordmark. |
 | `SITE_URL` | Canonical origin, from `NEXT_PUBLIC_SITE_URL`. Drives canonical, sitemap, Open Graph and schema. |
+| `RESEND_API_KEY` | Resend API key. With `EMAIL_FROM`, switches on "Email it instead" in the report builder. Server-only; never reaches the browser. |
+| `EMAIL_FROM` | Sender, e.g. `CertifyMe.net <reports@certifyme.net>`. Its domain must be verified in Resend. |
+| `EMAIL_REPLY_TO` | Optional reply-to address for the report email. |
 | `NEXT_PUBLIC_AI_ENABLED` | `true` runs the AI analysis in this deployment. Unset, the panel describes what the analysis adds and links to Compliance Hub. |
 
 One codebase serves both deployments: the public funnel with the AI panel as an

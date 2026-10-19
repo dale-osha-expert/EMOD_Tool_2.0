@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { analyzeDocument } from "@/lib/analyze";
@@ -144,5 +146,35 @@ describe.each(FIXTURES)("report for %s", (fixture) => {
     const all = SECTIONS.map((s) => s.id as SectionId);
     const buffer = await render(forFixture(fixture), all, NARRATIVE, true);
     expect(buffer.subarray(0, 5).toString()).toBe("%PDF-");
+  });
+});
+
+describe("the logo header", () => {
+  const logo = `data:image/png;base64,${readFileSync(
+    fileURLToPath(new URL("../public/logo-wordmark.png", import.meta.url)),
+  ).toString("base64")}`;
+
+  const withLogo = (fixture: string, omitPageNumbers: boolean) =>
+    renderToBuffer(
+      <EmodReport
+        analysis={forFixture(fixture)}
+        narrative={NARRATIVE}
+        options={{
+          sections: SECTIONS.map((s) => s.id as SectionId),
+          title: "Experience Modification Analysis",
+          includeIdentity: true,
+          omitPageNumbers,
+          logo,
+        }}
+      />,
+    );
+
+  it.each(FIXTURES)("renders the full report for %s with the logo", async (fixture) => {
+    // Same retry as the builder: the 2025 full report outgrows page numbering
+    // with or without the logo, which is the documented limit, not the image.
+    const buffer = await withLogo(fixture, false).catch(() => withLogo(fixture, true));
+    expect(buffer.subarray(0, 5).toString()).toBe("%PDF-");
+    // The image is embedded, not referenced.
+    expect(buffer.includes(Buffer.from("/Subtype /Image"))).toBe(true);
   });
 });

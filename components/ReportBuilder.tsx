@@ -4,17 +4,22 @@ import { useMemo, useState } from "react";
 import type { AiNarrative, Analysis } from "@/lib/types";
 import { PRESETS, SECTIONS, type SectionId } from "@/lib/report/presets";
 import { track } from "@/lib/site/analytics";
+import { PUBLISHER } from "@/lib/site/brand";
 import { Button, Card, CardHeader, cx, Spinner } from "./ui";
 import { EmailReport } from "./EmailReport";
 import { ErrorPanel } from "./ErrorPanel";
+import { reportError } from "@/lib/report/errors";
 import type { ToolError } from "@/lib/useEmodTool";
 
 export function ReportBuilder({
   analysis,
   narrative,
+  emailEnabled,
 }: {
   analysis: Analysis;
   narrative: AiNarrative | null;
+  /** Whether this deployment has Resend configured; decided on the server. */
+  emailEnabled: boolean;
 }) {
   const [presetId, setPresetId] = useState<string>("executive");
   const [custom, setCustom] = useState<SectionId[] | null>(null);
@@ -40,43 +45,60 @@ export function ReportBuilder({
     );
   };
 
+  /**
+   * Renders the PDF once, for either delivery. Errors propagate to the caller,
+   * which reports them in its own place on the page.
+   */
+  const buildPdf = async (): Promise<{ blob: Blob; filename: string }> => {
+    setDegraded(false);
+    // Loaded on demand: the renderer is a large dependency and most sessions
+    // never reach this step.
+    const [{ pdf }, { EmodReport }, logo] = await Promise.all([
+      import("@react-pdf/renderer"),
+      import("@/lib/report/document"),
+      loadLogo(),
+    ]);
+
+    const title = "Experience Modification Analysis";
+    const ordered = SECTIONS.filter((s) => sections.includes(s.id)).map(
+      (s) => s.id,
+    );
+
+    const render = (omitPageNumbers: boolean) =>
+      pdf(
+        <EmodReport
+          analysis={analysis}
+          narrative={narrative}
+          options={{
+            sections: ordered,
+            title,
+            includeIdentity,
+            omitPageNumbers,
+            logo,
+          }}
+        />,
+      ).toBlob();
+
+    // Numbering the pages needs a per-page callback, and on a long report
+    // that makes the PDF layout engine fail. Retry without it rather than
+    // hand back nothing: a report missing its page numbers is still the
+    // report, and the note below says what was lost.
+    let blob: Blob;
+    try {
+      blob = await render(false);
+    } catch {
+      blob = await render(true);
+      setDegraded(true);
+    }
+
+    return { blob, filename: `${fileStem(analysis, includeIdentity)}.pdf` };
+  };
+
   const download = async () => {
     setBuilding(true);
     setError(null);
-    setDegraded(false);
     try {
-      // Loaded on demand: the renderer is a large dependency and most sessions
-      // never reach this step.
-      const [{ pdf }, { EmodReport }] = await Promise.all([
-        import("@react-pdf/renderer"),
-        import("@/lib/report/document"),
-      ]);
-
-      const title = "Experience Modification Analysis";
-      const ordered = SECTIONS.filter((s) => sections.includes(s.id)).map(
-        (s) => s.id,
-      );
-
-      const render = (omitPageNumbers: boolean) =>
-        pdf(
-          <EmodReport
-            analysis={analysis}
-            narrative={narrative}
-            options={{ sections: ordered, title, includeIdentity, omitPageNumbers }}
-          />,
-        ).toBlob();
-
-      // Numbering the pages needs a per-page callback, and on a long report
-      // that makes the PDF layout engine fail. Retry without it rather than
-      // hand back nothing: a report missing its page numbers is still the
-      // report, and the note below says what was lost.
-      let blob: Blob;
-      try {
-        blob = await render(false);
-      } catch {
-        blob = await render(true);
-        setDegraded(true);
-      }
+      const { blob, filename } = await buildPdf();
 
       // Counts that a report was produced, and which preset. Nothing about
       // the worksheet behind it.
@@ -88,20 +110,12 @@ export function ReportBuilder({
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${fileStem(analysis, includeIdentity)}.pdf`;
+      link.download = filename;
       link.click();
       // Revoke on the next tick so the click has taken effect first.
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (e) {
-      setError({
-        code: "report",
-        message: "The report could not be generated.",
-        hint:
-          e instanceof Error
-            ? `${e.message}. Everything on this page is still available on screen.`
-            : "Everything on this page is still available on screen.",
-        retryable: true,
-      });
+      setError(reportError(e));
     } finally {
       setBuilding(false);
     }
@@ -234,10 +248,43 @@ export function ReportBuilder({
           ) : null}
         </div>
 
-        <EmailReport />
+        <EmailReport
+          enabled={emailEnabled}
+          disabled={building || sections.length === 0}
+          buildPdf={buildPdf}
+          onSent={() =>
+            track("report_downloaded", {
+              preset: custom ? "custom" : presetId,
+              sections: sections.length,
+              delivery: "email",
+            })
+          }
+        />
       </div>
     </Card>
   );
+}
+
+/**
+ * The wordmark as a data URI for the PDF header. A logo that fails to load is
+ * cosmetic, not a wrong figure, so the report falls back to the text wordmark
+ * rather than failing.
+ */
+async function loadLogo(): Promise<string | undefined> {
+  if (!PUBLISHER.wordmark) return undefined;
+  try {
+    const response = await fetch(PUBLISHER.wordmark);
+    if (!response.ok) return undefined;
+    const blob = await response.blob();
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return undefined;
+  }
 }
 
 function fileStem(analysis: Analysis, includeIdentity: boolean): string {

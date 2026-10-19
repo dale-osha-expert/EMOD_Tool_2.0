@@ -31,6 +31,8 @@ export interface GuardOptions {
   instancePerHour: number;
   /** True when the caller is spending their own quota rather than ours. */
   usesOwnKey?: boolean;
+  /** What to tell the visitor when the instance limit is hit, if not the AI wording. */
+  instanceLimit?: { message: string; hint: string };
 }
 
 type Bucket = number[];
@@ -163,6 +165,9 @@ function checkRate(
   if (!options.usesOwnKey) {
     const instance = take(`${options.route}:__instance`, now);
     if (count(instance, now, HOUR) > options.instancePerHour) {
+      if (options.instanceLimit) {
+        return throttled(options.instanceLimit.message, options.instanceLimit.hint);
+      }
       return throttled(
         "This tool has reached its hourly limit for AI requests.",
         "The free API tier it runs on is shared between everyone using it. Trying again later, or adding your own API key under Options, will work. Your calculations are complete and unaffected.",

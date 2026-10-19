@@ -106,7 +106,7 @@ the printed totals is recovered in `lib/rating/claims.ts`. Quote
 ## Commands
 
 ```bash
-npm test          # 129 tests, ~55s
+npm test          # 140 tests, ~55s
 npm run typecheck
 npm run build
 npm run dev
@@ -159,9 +159,12 @@ npm run fixture -- worksheet.pdf fixtures/name.json "REDACTED CO"
   real domain exists and canonical, sitemap, Open Graph and schema follow.
 - `NEXT_PUBLIC_AI_ENABLED=true` turns the AI panel on; unset, it is an upsell.
   One codebase serves both the public funnel and Compliance Hub.
-- **"Email it instead" in the report builder is visual only.** The send button
-  is disabled and says so; nothing typed is sent or saved. Where addresses go
-  is undecided. `components/EmailReport.tsx` lists what switching it on needs,
-  including an explicit exception to the no-persistence rule.
+- **"Email it instead" sends the finished PDF through Resend** when
+  `RESEND_API_KEY` and `EMAIL_FROM` are set (read on the server at build, so a
+  redeploy is needed after changing them). `app/api/email-report` accepts only
+  a PDF this tool rendered, rate limits hard, and logs nothing; the sandbox
+  cannot reach Resend, so the route is tested against a stubbed `fetch`. The
+  **promotions checkbox is still visual only** - it is not sent anywhere until
+  there is a decision on where opt-ins are recorded.
 - Deferred features: next-year roll-off projection, and year-over-year
   comparison of two worksheets.

@@ -1,4 +1,5 @@
 import { EmodTool } from "@/components/EmodTool";
+import { emailConfig } from "@/lib/email/send";
 import { ByLine } from "@/components/site/Brand";
 import { ThemeToggle } from "@/components/site/ThemeToggle";
 import {
@@ -37,7 +38,7 @@ export default function Page() {
       <Hero />
 
       <main className="pt-6">
-        <EmodTool chrome={false} />
+        <EmodTool chrome={false} emailEnabled={emailConfig() !== null} />
       </main>
 
       <HowItWorks />

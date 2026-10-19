@@ -2,6 +2,7 @@
 
 import {
   Document,
+  Image,
   Page,
   StyleSheet,
   Text,
@@ -184,6 +185,12 @@ export interface ReportOptions {
    * builder retries with: a report without page numbers beats no report.
    */
   omitPageNumbers?: boolean;
+  /**
+   * The publisher's wordmark as a data URI. Passed in already loaded rather
+   * than fetched by the renderer, so the report still renders offline and in
+   * tests; without it the header falls back to the text wordmark.
+   */
+  logo?: string;
 }
 
 export function EmodReport({
@@ -210,13 +217,27 @@ export function EmodReport({
       creator={TOOL_NAME}
     >
       <Page size="LETTER" style={styles.page}>
-        <View style={styles.brandBar}>
-          <Text style={styles.brand}>
-            {TOOL_NAME} &nbsp;·&nbsp; by{" "}
-            <Text style={styles.brandName}>{PUBLISHER.name}</Text>
-          </Text>
-          <Text style={styles.brand}>{PUBLISHER.url.replace(/^https:\/\//, "")}</Text>
-        </View>
+        {options.logo ? (
+          // A fixed-size image on a single-line row: nothing here can split
+          // across pages, so it stays clear of the layout failure noted above.
+          <View style={[styles.brandBar, { marginBottom: 12 }]}>
+            <Image
+              src={options.logo}
+              style={{ height: 22, width: 22 * PUBLISHER.wordmarkAspect }}
+            />
+            <Text style={styles.brand}>
+              {TOOL_NAME} &nbsp;·&nbsp; {PUBLISHER.url.replace(/^https:\/\//, "")}
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.brandBar}>
+            <Text style={styles.brand}>
+              {TOOL_NAME} &nbsp;·&nbsp; by{" "}
+              <Text style={styles.brandName}>{PUBLISHER.name}</Text>
+            </Text>
+            <Text style={styles.brand}>{PUBLISHER.url.replace(/^https:\/\//, "")}</Text>
+          </View>
+        )}
 
         <Text style={styles.title}>{options.title}</Text>
         {options.includeIdentity && ws.riskName ? (

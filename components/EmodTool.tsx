@@ -25,7 +25,17 @@ import { track } from "@/lib/site/analytics";
  * Layout keys off container width rather than viewport width throughout, so the
  * same component works full-screen and as a narrow iframe on a wider page.
  */
-export function EmodTool({ chrome = true }: { chrome?: boolean }) {
+export function EmodTool({
+  chrome = true,
+  emailEnabled = false,
+}: {
+  chrome?: boolean;
+  /**
+   * Whether emailing reports is configured. Read on the server by the page,
+   * because the Resend key must never reach the browser.
+   */
+  emailEnabled?: boolean;
+}) {
   const tool = useEmodTool();
   const reported = useRef(false);
   const [manual, setManual] = useState(false);
@@ -258,6 +268,7 @@ export function EmodTool({ chrome = true }: { chrome?: boolean }) {
             <ReportBuilder
               analysis={tool.analysis}
               narrative={tool.ai.narrative}
+              emailEnabled={emailEnabled}
             />
           ) : null}
 
