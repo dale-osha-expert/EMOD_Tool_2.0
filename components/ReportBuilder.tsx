@@ -5,6 +5,7 @@ import type { AiNarrative, Analysis } from "@/lib/types";
 import { PRESETS, SECTIONS, type SectionId } from "@/lib/report/presets";
 import { track } from "@/lib/site/analytics";
 import { Button, Card, CardHeader, cx, Spinner } from "./ui";
+import { EmailReport } from "./EmailReport";
 import { ErrorPanel } from "./ErrorPanel";
 import type { ToolError } from "@/lib/useEmodTool";
 
@@ -232,6 +233,8 @@ export function ReportBuilder({
             </span>
           ) : null}
         </div>
+
+        <EmailReport />
       </div>
     </Card>
   );
