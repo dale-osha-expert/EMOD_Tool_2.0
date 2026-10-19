@@ -1,0 +1,154 @@
+# CLAUDE.md
+
+NCCI experience rating worksheet analyser. A visitor drops in their workers
+compensation experience rating worksheet; the tool recalculates the experience
+modification factor, verifies it against the worksheet's own arithmetic, prices
+each claim, and exports a PDF report. It is free and ungated because it is a
+lead magnet for CertifyMe.net, CertifyMeOnline.net and Compliance Hub.
+
+Next.js on Vercel. Working branch `claude/ncci-emod-tool-hld8vu`.
+Architecture, SEO and deployment detail live in [README.md](./README.md) — this
+file is the things that will bite you.
+
+## Two rules that are not negotiable
+
+The previous build of this tool silently substituted default values when its
+LLM call failed and presented them as real results. Everything below follows
+from not doing that again.
+
+1. **A failure is never replaced by a default.** Every AI failure path is a
+   typed `AiError` carrying a user-facing hint; a retired model is reported by
+   name. A malformed or truncated response is withheld, not rendered partially.
+   `tests/ai-failures.test.ts` exists solely to keep this true.
+2. **Unverified figures are never shown as reliable.** `lib/rating/reconcile.ts`
+   re-derives every relationship the worksheet asserts about itself. When a
+   check fails, the UI withholds the results behind an explicit acknowledgement
+   and names the disagreeing cell.
+
+Findings and AI output are worded as things to verify, never as instructions —
+the tool sees one document and cannot see claim files, reserving rationale or
+payroll records. A test asserts the findings contain no directive language.
+
+## Pipeline
+
+```
+PDF (never uploaded)
+ 1. text layer present? ── no ──> stated plainly + opt-in transcription or manual entry
+ 2. deterministic parse        lib/parse/*     columns anchored on printed headers
+ 3. reconciliation gate        lib/rating/reconcile.ts    <-- the product's promise
+ 4. recompute mod, scenarios   lib/rating/*    ) never depend on a model
+ 5. deterministic findings     lib/rating/findings.ts     )
+ 6. ONE Gemini call            app/api/analyze  <-- optional, degrades visibly
+ 7. client-side PDF report     lib/report/*
+```
+
+Steps 1–5 and 7 are pure computation. If Gemini is down, rate limited or
+retired, everything except the prose still works.
+
+## The maths, and the numbers that prove it still works
+
+```
+stabilizing value = expected excess x (1 - W) + ballast
+mod = (actual primary + SV + W x actual excess)
+    / (expected primary + SV + W x expected excess)
+```
+
+The denominator collapses to expected losses + ballast, so it is fixed for a
+given rating — which is why per-claim mod deltas are additive.
+
+Three fixtures, each a real worksheet with identifiers pseudonymised. If you
+break something, one of these moves:
+
+| Fixture | Recomputed mod | Loss-free min | Notes |
+|---|---|---|---|
+| `interstate-az-fl` | `.84` | `.62` | 2024 form, ERA delta of `1,956`, split point `$16,500` |
+| `interstate-az-fl-tx-2025` | `1.10` | `.61` | split-point column, 19 policies, ARAP 1.09, `$82,337` loss limitation |
+| `intrastate-tx-loss-free` | `.81` | `.81` | 2017 single-state, no claims, no surcharges |
+
+## Traps
+
+**The PDF report layout engine.** Symptom is always
+`unsupported number: -1.8473220735918863e+22`.
+
+- No `wrap={false}` on anything multi-line. Single-line table rows only.
+- No `minPresenceAhead`, anywhere. It reintroduces the failure on its own.
+- Any per-page `render` callback fails past a document length, which is why
+  page numbering has a fallback: the builder retries with `omitPageNumbers`
+  and tells the user. Do not assume a report renders with page numbers.
+- I have already reintroduced this once, by adding `wrap={false}` in the same
+  file that carries the warning. Read the comments before editing
+  `lib/report/document.tsx`.
+
+**Report typography.** Built-in PDF fonts are WinAnsi only, so `−` (U+2212) and
+`≈` render as missing glyphs. Use ASCII in `lib/report/document.tsx`;
+`tests/report.test.ts` scans the source for violations.
+
+**Fixtures are pseudonymised on regeneration.** Risk ids, carrier codes, policy
+and claim numbers all change. Assert shapes (`expect(ws.riskId).toMatch(/^\d{9}$/)`)
+and identify claims by their financial characteristics, never by literal value.
+
+**`scripts/make-fixture.mjs`.** Redaction is scoped per page because pages share
+a coordinate space — an earlier version searched every item by `y` and
+pseudonymised column headers on other pages (`ELR` became `XXX284`).
+Replacements preserve length and character class so column geometry holds.
+
+**The parser.** Columns are anchored on the header labels the form itself
+prints, never on fixed coordinates — that is what lets one parser read the
+2017, 2024 and 2025 layouts. Numeric cells are assigned by their **right** edge
+(figures are right-aligned), alphabetic cells by their left. New form variants
+usually need an optional `ColumnSpec`, not new logic.
+
+**Claim values are not what they appear.** A claim flagged `#` or `C` enters the
+rating at less than its printed incurred; the gap between the printed claims and
+the printed totals is recovered in `lib/rating/claims.ts`. Quote
+`ratedIncurred`, never `actualIncurred`, anywhere a user or the model sees it.
+
+## Commands
+
+```bash
+npm test          # 123 tests, ~50s
+npm run typecheck
+npm run build
+npm run dev
+
+# End-to-end against a real worksheet, with the server already running:
+PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium npm run smoke -- path/to/worksheet.pdf
+
+# Regenerate a fixture from a real PDF (identifiers are replaced):
+npm run fixture -- worksheet.pdf fixtures/name.json "REDACTED CO"
+```
+
+## Environment
+
+- Outbound HTTPS goes through an egress proxy that **denies many hosts**,
+  including `vercel.app` and `ai.google.dev`. A 403 on CONNECT is policy, not a
+  dead site. Say so plainly rather than concluding something is unreachable.
+- Uploaded files and `node_modules` do not survive container recycling. Run
+  `npm install` if imports suddenly fail to resolve.
+- `fuser -k 3000/tcp` before restarting the dev server; `pkill -f next` can
+  take down the shell.
+
+## Conventions
+
+- Comments explain **why**, not what. Several in this codebase record a
+  decision that was expensive to reach — leave them.
+- Failures are typed, carry a hint, and say what the user can still do.
+- Nothing is persisted. No `localStorage`, no cookies, no database, no logging
+  of request bodies. The smoke test asserts browser storage stays empty.
+- Analytics is counting, not tracking: an allowlist of three events in
+  `lib/site/analytics.ts`, never anything from a worksheet.
+
+## Outstanding
+
+- **`lib/site/brand.ts` has three blank `description` fields.** Deliberate. The
+  CertifyMe sites were unreachable from the session that built this, and
+  inventing claims about them would be the worst thing to publish on a page
+  built for answer-engine citation. Components render a clean link when a
+  description is unset. Fill them from the real sites, not from assumption.
+- `PUBLISHER.logo` is null; the byline falls back to a text wordmark.
+- `SITE_URL` points at the Vercel deployment. Set `NEXT_PUBLIC_SITE_URL` once a
+  real domain exists and canonical, sitemap, Open Graph and schema follow.
+- `NEXT_PUBLIC_AI_ENABLED=true` turns the AI panel on; unset, it is an upsell.
+  One codebase serves both the public funnel and Compliance Hub.
+- Deferred features: next-year roll-off projection, and year-over-year
+  comparison of two worksheets.
