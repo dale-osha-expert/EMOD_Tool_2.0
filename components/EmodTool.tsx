@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useEmodTool } from "@/lib/useEmodTool";
 import { AiPanel } from "./AiPanel";
 import { AiUpsell } from "./site/AiUpsell";
+import { ResultsPromotions } from "./site/ResultsPromotions";
 import { ClaimsTable } from "./ClaimsTable";
 import { ErrorPanel } from "./ErrorPanel";
 import { FindingsList } from "./FindingsList";
@@ -234,6 +235,7 @@ export function EmodTool({ chrome = true }: { chrome?: boolean }) {
               <ScenariosPanel analysis={tool.analysis} />
               <FindingsList findings={tool.analysis.findings} />
               <ClaimsTable analysis={tool.analysis} />
+              <ResultsPromotions analysis={tool.analysis} />
             </>
           ) : null}
 

@@ -106,7 +106,7 @@ the printed totals is recovered in `lib/rating/claims.ts`. Quote
 ## Commands
 
 ```bash
-npm test          # 123 tests, ~50s
+npm test          # 129 tests, ~55s
 npm run typecheck
 npm run build
 npm run dev
@@ -134,7 +134,13 @@ npm run fixture -- worksheet.pdf fixtures/name.json "REDACTED CO"
   decision that was expensive to reach — leave them.
 - Failures are typed, carry a hint, and say what the user can still do.
 - Nothing is persisted. No `localStorage`, no cookies, no database, no logging
-  of request bodies. The smoke test asserts browser storage stays empty.
+  of request bodies. The smoke test asserts browser storage stays empty. That
+  includes the theme toggle: it overrides the browser's scheme for the visit
+  only, and a reload returns to Auto.
+- Marketing tied to results lives in `lib/site/promotions.ts` and is drawn on
+  the page and into the PDF. It quotes only figures the page already shows,
+  never targets by class code (descriptions are usually unprinted), and never
+  promises a lower mod. `tests/promotions.test.ts` holds it to that.
 - Analytics is counting, not tracking: an allowlist of three events in
   `lib/site/analytics.ts`, never anything from a worksheet.
 

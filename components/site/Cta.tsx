@@ -53,7 +53,7 @@ export function CtaButton({
       onClick={() => track("cta_click", { destination: link.name, context })}
       className={
         variant === "primary"
-          ? "inline-flex items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-3.5 py-1.5 text-[14px] font-medium text-white transition-opacity hover:opacity-90"
+          ? "inline-flex items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-3.5 py-1.5 text-[14px] font-medium text-[var(--color-canvas)] transition-opacity hover:opacity-90"
           : "inline-flex items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] px-3.5 py-1.5 text-[14px] font-medium transition-colors hover:bg-[var(--color-surface)]"
       }
     >

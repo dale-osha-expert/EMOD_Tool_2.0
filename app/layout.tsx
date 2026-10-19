@@ -59,6 +59,11 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  // Tints the mobile browser's toolbar to match the page in either scheme.
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f6f7f9" },
+    { media: "(prefers-color-scheme: dark)", color: "#191d23" },
+  ],
 };
 
 export default function RootLayout({

@@ -1,5 +1,6 @@
 import { EmodTool } from "@/components/EmodTool";
 import { ByLine } from "@/components/site/Brand";
+import { ThemeToggle } from "@/components/site/ThemeToggle";
 import {
   Destinations,
   Disclaimer,
@@ -26,7 +27,10 @@ export default function Page() {
           <span className="text-[13px] font-semibold tracking-tight">
             {TOOL_NAME}
           </span>
-          <ByLine size="sm" />
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <ByLine size="sm" />
+          </div>
         </div>
       </div>
 

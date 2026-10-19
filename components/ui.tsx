@@ -95,7 +95,7 @@ export function Button({
         "disabled:cursor-not-allowed disabled:opacity-50",
         size === "sm" ? "px-2.5 py-1 text-[13px]" : "px-3.5 py-1.5 text-[14px]",
         variant === "primary" &&
-          "border-transparent bg-[var(--color-accent)] text-white hover:opacity-90",
+          "border-transparent bg-[var(--color-accent)] text-[var(--color-canvas)] hover:opacity-90",
         variant === "secondary" &&
           "border-[var(--color-line-strong)] bg-[var(--color-canvas)] text-[var(--color-ink)] hover:bg-[var(--color-surface)]",
         variant === "ghost" &&

@@ -12,7 +12,8 @@ import {
   type Analysis,
   type AiNarrative,
 } from "../types";
-import { DESTINATIONS, PUBLISHER, TOOL_NAME } from "../site/brand";
+import { AI_ENABLED, DESTINATIONS, PUBLISHER, TOOL_NAME } from "../site/brand";
+import { buildPromotions } from "../site/promotions";
 import type { SectionId } from "./presets";
 
 /* Built-in PDF fonts only: no network fetch, so the report renders offline. */
@@ -296,7 +297,7 @@ export function EmodReport({
           <MethodologySection analysis={analysis} usedAi={Boolean(narrative)} />
         ) : null}
 
-        <NextSteps />
+        <NextSteps analysis={analysis} />
 
         <View style={styles.footer} fixed>
           <Text>
@@ -329,8 +330,13 @@ export function EmodReport({
  * written as what each destination is for rather than as an advertisement -
  * a report someone forwards to their broker should not read like a flyer.
  */
-function NextSteps() {
+function NextSteps({ analysis }: { analysis: Analysis }) {
   const described = DESTINATIONS.filter((d) => d.description.trim().length > 0);
+  // The same results-tied lines the page shows, so a forwarded report explains
+  // why each destination is listed rather than presenting a bare list of links.
+  const promotions = buildPromotions(analysis, {
+    includeComplianceHub: !AI_ENABLED,
+  });
 
   return (
     // No wrap={false} here: a block that cannot split fails the layout engine
@@ -344,6 +350,13 @@ function NextSteps() {
         You can re-run it on any NCCI experience rating worksheet at no cost;
         the document is read in your browser and is never uploaded.
       </Text>
+
+      {promotions.map((p) => (
+        <View key={p.id} style={styles.p}>
+          <Text style={styles.ctaName}>{p.headline}</Text>
+          <Text style={styles.muted}>{p.body}</Text>
+        </View>
+      ))}
 
       {(described.length > 0 ? described : DESTINATIONS).map((d) => (
         <View key={d.url} style={styles.ctaCard}>

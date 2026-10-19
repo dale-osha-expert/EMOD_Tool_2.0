@@ -71,6 +71,23 @@
   --color-critical-soft: #3a1a17;
 }
 
+/*
+ * Follows the browser's light or dark setting unless ThemeToggle overrides it.
+ * color-scheme is what makes native scrollbars, form controls and the file
+ * picker button match, which the color tokens alone cannot reach.
+ */
+:root {
+  color-scheme: light dark;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
 /* See ByLine: the CertifyMe wordmark needs a light ground to stay legible. */
 .logo-chip {
   display: inline-flex;
