@@ -120,7 +120,8 @@ worse than no page, and an answer engine will repeat the mistake.
 
 | Setting | Purpose |
 |---|---|
-| `PUBLISHER.logo` | Path to a logo in `public/`. Unset, the byline renders a text wordmark. |
+| `PUBLISHER.logo` | Full logo in `public/`, used by the Organization schema. |
+| `PUBLISHER.wordmark` | Wordmark cropped from the same logo, used by the byline. Unset, the byline renders a text wordmark. |
 | `SITE_URL` | Canonical origin, from `NEXT_PUBLIC_SITE_URL`. Drives canonical, sitemap, Open Graph and schema. |
 | `NEXT_PUBLIC_AI_ENABLED` | `true` runs the AI analysis in this deployment. Unset, the panel describes what the analysis adds and links to Compliance Hub. |
 

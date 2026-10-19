@@ -202,7 +202,7 @@ export function ReportBuilder({
           <span>
             Include the company name and risk ID in the report
             <span className="mt-0.5 block text-[12px] text-[var(--color-ink-muted)]">
-              Turn this off to produce an anonymised copy.
+              Turn this off to produce an anonymized copy.
             </span>
           </span>
         </label>

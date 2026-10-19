@@ -98,7 +98,7 @@ export function AiPanel({
           <p className="text-[13px] leading-relaxed text-[var(--color-ink-muted)]">
             The recalculation, scenarios, observations and report are all
             complete without this step. Generating the written analysis adds a
-            plain-language summary and a prioritised set of suggestions, and asks
+            plain-language summary and a prioritized set of suggestions, and asks
             the model to check our reading of the worksheet against the source
             text.
           </p>

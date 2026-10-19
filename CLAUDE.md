@@ -140,12 +140,15 @@ npm run fixture -- worksheet.pdf fixtures/name.json "REDACTED CO"
 
 ## Outstanding
 
-- **`lib/site/brand.ts` has three blank `description` fields.** Deliberate. The
-  CertifyMe sites were unreachable from the session that built this, and
-  inventing claims about them would be the worst thing to publish on a page
-  built for answer-engine citation. Components render a clean link when a
-  description is unset. Fill them from the real sites, not from assumption.
-- `PUBLISHER.logo` is null; the byline falls back to a text wordmark.
+- **Brand copy in `lib/site/brand.ts` was written from the live sites in
+  October 2026.** None of the three mentions workers comp or experience rating:
+  CertifyMe.net is forklift training, CertifyMeOnline.net aerial lift training,
+  Compliance Hub employee document and certification tracking. Compliance Hub's
+  public site says nothing about the AI analysis, so `AiUpsell.tsx` describes
+  only what `lib/llm/*` produces and never how it looks there. Re-read the sites
+  before changing a description; never describe them from assumption.
+- The proxy allows the `www.` hosts of certifyme.net and certifymeonline.net
+  but still denies the apex domains.
 - `SITE_URL` points at the Vercel deployment. Set `NEXT_PUBLIC_SITE_URL` once a
   real domain exists and canonical, sitemap, Open Graph and schema follow.
 - `NEXT_PUBLIC_AI_ENABLED=true` turns the AI panel on; unset, it is an upsell.

@@ -7,6 +7,10 @@
  * mistake. Nothing in here is inferred - each field is either confirmed or
  * marked TODO, and the components below degrade gracefully when a field is
  * still unset rather than inventing filler.
+ *
+ * The descriptions were written from the live sites in October 2026. None of
+ * the three mentions workers compensation or experience rating, so nothing
+ * here claims they do; if a site's offering changes, change its line here.
  */
 
 export interface SiteLink {
@@ -26,41 +30,52 @@ export interface SiteLink {
 export const PUBLISHER = {
   name: "CertifyMe.net",
   url: "https://certifyme.net",
+  /** Used in the Organization schema. Confirmed against certifyme.net. */
+  description:
+    "CertifyMe.net has provided online forklift operator training and certification for employers since 1999, with a printable operator card on completion, the onsite evaluation checklist, and free three-year renewals.",
   /**
-   * TODO: confirm. Used in the Organization schema and the footer byline.
+   * The full stacked logo, for the Organization schema. Too tall to read at
+   * byline size, which is what the wordmark below is for.
    */
-  description: "",
+  logo: "/logo.png" as string | null,
   /**
-   * Drop a file at public/logo.svg (or .png) and set this path to show a real
-   * logo. Left null, the header and report fall back to a text wordmark, which
-   * is correct and unbranded rather than a broken image.
+   * The wordmark cropped from the same logo, for the header and footer byline.
+   * Left null, the byline falls back to a text wordmark, which is correct and
+   * unbranded rather than a broken image.
    */
-  logo: null as string | null,
+  wordmark: "/logo-wordmark.png" as string | null,
+  /** Intrinsic aspect ratio of the wordmark file, so the byline never distorts it. */
+  wordmarkAspect: 440 / 91,
 } as const;
 
 /** The upsell destination for the AI analysis. */
 export const COMPLIANCE_HUB: SiteLink = {
   name: "Compliance Hub",
   url: "https://compliance-hub.cloud",
-  // TODO: confirm what Compliance Hub is and what the AI analysis gives you there.
-  description: "",
-  cta: "Open it in Compliance Hub",
+  // Its public site describes employee records only and says nothing about the
+  // AI analysis, so this line describes Compliance Hub itself. The CTA lands on
+  // that homepage; "Open it in Compliance Hub" promised a feature page that a
+  // visitor would not find there.
+  description:
+    "Employee document and certification tracking for small employers: training certificates, driver's licenses and drug-test documentation kept in one place, with expiration alerts and PDF reports for when someone asks for proof.",
+  cta: "Explore Compliance Hub",
 };
 
 export const CERTIFY_ME_ONLINE: SiteLink = {
   name: "CertifyMeOnline.net",
   url: "https://certifymeonline.net",
-  // TODO: confirm what CertifyMeOnline offers and how it differs from CertifyMe.net.
-  description: "",
-  cta: "Visit CertifyMeOnline.net",
+  // Aerial and scissor lifts, where CertifyMe.net is forklifts.
+  description:
+    "Online aerial lift operator training, with one course covering scissor lifts, boom lifts and cherry pickers, plus the onsite evaluation checklist, a wallet card mailed to you and free three-year renewals.",
+  cta: "See aerial lift courses",
 };
 
 export const CERTIFY_ME: SiteLink = {
   name: "CertifyMe.net",
   url: "https://certifyme.net",
-  // TODO: confirm.
-  description: "",
-  cta: "Visit CertifyMe.net",
+  description:
+    "Online forklift operator certification for warehouse, rough terrain and order picker trucks and pallet jacks, plus Train the Trainer, with a printable operator card on completion and free three-year renewals.",
+  cta: "See forklift courses",
 };
 
 /** Order matters: this is the order CTAs appear on the page and in the report. */

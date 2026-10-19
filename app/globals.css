@@ -71,6 +71,26 @@
   --color-critical-soft: #3a1a17;
 }
 
+/* See ByLine: the CertifyMe wordmark needs a light ground to stay legible. */
+.logo-chip {
+  display: inline-flex;
+  line-height: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .logo-chip {
+    background: #ffffff;
+    border-radius: 4px;
+    padding: 3px 5px;
+  }
+}
+
+:root[data-theme="dark"] .logo-chip {
+  background: #ffffff;
+  border-radius: 4px;
+  padding: 3px 5px;
+}
+
 html,
 body {
   background: var(--color-canvas);

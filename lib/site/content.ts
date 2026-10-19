@@ -108,7 +108,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   {
     term: "Ballast",
     definition:
-      "A stabilising amount added to both sides of the mod calculation. It damps the effect of a single claim on a small employer, which is why smaller businesses see less movement per claim.",
+      "A stabilizing amount added to both sides of the mod calculation. It damps the effect of a single claim on a small employer, which is why smaller businesses see less movement per claim.",
   },
   {
     term: "Weighting factor",

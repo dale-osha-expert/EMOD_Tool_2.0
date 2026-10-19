@@ -23,7 +23,7 @@ RULES FOR THE WRITTEN ANALYSIS:
 - Note that a lower mod is not always available and that some findings may have legitimate explanations the document does not show.
 - Keep the summary to 3-5 sentences. Keep each rationale to 2-4 sentences.
 - Reference claims by the "ref" value given (e.g. CLAIM-1), never by any other identifier.
-- Write in plain British-neutral business English. No headings, no markdown, no bullet characters inside the text fields.`;
+- Write in plain US business English, matching the American spelling of the worksheet and the site it is shown on. No headings, no markdown, no bullet characters inside the text fields.`;
 
 export function buildUserPrompt(payload: unknown): string {
   return `Here is the analysis data.

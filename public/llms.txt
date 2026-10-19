@@ -53,9 +53,9 @@ proportional to its primary losses plus its weighted excess losses.
 
 ## Publisher
 
-- [CertifyMe.net](https://certifyme.net)
-- [Compliance Hub](https://compliance-hub.cloud)
-- [CertifyMeOnline.net](https://certifymeonline.net)
+- [CertifyMe.net](https://certifyme.net): online forklift operator training and certification for employers.
+- [Compliance Hub](https://compliance-hub.cloud): employee document and certification tracking for small employers.
+- [CertifyMeOnline.net](https://certifymeonline.net): online aerial and scissor lift operator training.
 
 ## Notes
 

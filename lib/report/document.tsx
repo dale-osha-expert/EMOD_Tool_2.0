@@ -205,8 +205,8 @@ export function EmodReport({
   return (
     <Document
       title={options.title}
-      author="Experience Modification Analyser"
-      creator="Experience Modification Analyser"
+      author={TOOL_NAME}
+      creator={TOOL_NAME}
     >
       <Page size="LETTER" style={styles.page}>
         <View style={styles.brandBar}>

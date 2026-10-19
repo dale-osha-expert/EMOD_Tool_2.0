@@ -142,6 +142,12 @@ export function Destinations() {
       <h2 className="text-[20px] font-semibold tracking-tight @2xl:text-[24px]">
         More from CertifyMe
       </h2>
+      <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-[var(--color-ink-muted)]">
+        An experience mod is set by claims. The CertifyMe businesses work on the
+        safety side of that: the forklift and aerial lift operator training OSHA
+        requires employers to provide, and keeping the records that show it was
+        done.
+      </p>
       <div className="mt-5 grid gap-3 @2xl:grid-cols-3">
         {DESTINATIONS.map((link) => (
           <DestinationCard key={link.url} link={link} context="footer" />

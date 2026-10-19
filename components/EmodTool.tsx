@@ -15,7 +15,7 @@ import { ScanConsent } from "./ScanConsent";
 import { ScenariosPanel } from "./ScenariosPanel";
 import { Uploader } from "./Uploader";
 import { Button } from "./ui";
-import { AI_ENABLED } from "@/lib/site/brand";
+import { AI_ENABLED, TOOL_NAME } from "@/lib/site/brand";
 import { track } from "@/lib/site/analytics";
 
 /**
@@ -56,7 +56,7 @@ export function EmodTool({ chrome = true }: { chrome?: boolean }) {
         <header className="mb-5 flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-[19px] font-semibold tracking-tight @2xl:text-[22px]">
-              Experience Modification Analyser
+              {TOOL_NAME}
             </h1>
             <p className="mt-1 max-w-2xl text-[13px] leading-relaxed text-[var(--color-ink-muted)]">
               Recalculates an NCCI experience rating worksheet, shows what each
