@@ -106,7 +106,7 @@ the printed totals is recovered in `lib/rating/claims.ts`. Quote
 ## Commands
 
 ```bash
-npm test          # 140 tests, ~55s
+npm test          # 141 tests, ~55s
 npm run typecheck
 npm run build
 npm run dev

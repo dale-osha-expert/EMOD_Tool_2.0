@@ -145,6 +145,16 @@ describe("the email-report route", () => {
     expect(error.hint).toContain("domain is not verified");
   });
 
+  it("does not call a test-mode refusal a bad key", async () => {
+    resendReturns(403, {
+      message: "You can only send testing emails to your own email address.",
+    });
+    const res = await POST(request({ email: "someone-else@example.org", report }));
+    const { error } = await res.json();
+    expect(error.message).toBe("The email service would not send this message.");
+    expect(error.hint).toContain("only send testing emails to your own email address");
+  });
+
   it("reports a busy, failing or unreachable service as retryable", async () => {
     resendReturns(429);
     let res = await POST(request({ email: "a@example.org", report }));

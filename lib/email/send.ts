@@ -210,7 +210,11 @@ export async function sendReport(
       503,
     );
   }
-  if (response.status === 401 || response.status === 403) {
+  // Only 401 means the key itself is wrong. Resend also answers 403 to a
+  // valid key in test mode (no verified domain) for any recipient other than
+  // the account owner, and its message says exactly that - so a 403 falls
+  // through to the general case, which passes the message on.
+  if (response.status === 401) {
     throw new EmailError(
       "rejected",
       "The email service refused this deployment's credentials.",
