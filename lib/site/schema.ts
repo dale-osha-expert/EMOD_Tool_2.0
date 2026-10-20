@@ -1,4 +1,4 @@
-import { PUBLISHER, SITE_URL, TOOL_NAME } from "./brand";
+import { PUBLISHER, SITE_URL, TOOL_NAME, TOOL_SHORT_NAME } from "./brand";
 import { FAQS, GLOSSARY } from "./content";
 
 /**
@@ -26,6 +26,7 @@ export function buildSchema() {
     "@type": "WebApplication",
     "@id": `${SITE_URL}/#tool`,
     name: TOOL_NAME,
+    alternateName: TOOL_SHORT_NAME,
     url: SITE_URL,
     applicationCategory: "BusinessApplication",
     operatingSystem: "Any modern web browser",
@@ -85,6 +86,7 @@ export function buildSchema() {
     "@id": `${SITE_URL}/#website`,
     url: SITE_URL,
     name: TOOL_NAME,
+    alternateName: TOOL_SHORT_NAME,
     publisher: { "@id": organization["@id"] },
   };
 

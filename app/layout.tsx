@@ -76,13 +76,11 @@ export default function RootLayout({
       <body>
         {children}
         {/*
-          Vercel Web Analytics. Cookieless, sets nothing on the device, and
-          counts page views plus the small allowlist of events in
-          lib/site/analytics.ts. Served by the platform, so it 404s harmlessly
-          in local development and when analytics is not enabled on the
-          project; nothing in the tool depends on it loading.
+          No analytics script is loaded. Vercel's was served by the platform
+          and does not exist on a self-hosted server; lib/site/analytics.ts
+          keeps the allowlisted events and becomes a no-op until a
+          replacement is chosen.
         */}
-        <script defer src="/_vercel/insights/script.js" />
       </body>
     </html>
   );

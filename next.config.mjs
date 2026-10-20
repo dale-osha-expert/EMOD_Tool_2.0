@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Self-hosted: build a minimal server bundle (.next/standalone) that runs
+  // with plain `node server.js`, without node_modules. See the Dockerfile.
+  output: "standalone",
   // The tool is designed to be embedded in a third-party "tools" page via iframe.
   // We therefore do NOT send X-Frame-Options: DENY. Framing is controlled by CSP
   // frame-ancestors instead, which is configurable per deployment.

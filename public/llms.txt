@@ -48,7 +48,7 @@ proportional to its primary losses plus its weighted excess losses.
 
 ## Pages
 
-- [Experience Mod Analyzer](https://emod-tool-2-0.vercel.app/): the tool, how
+- [Experience Mod Analyzer](https://emodanalyzer.com/): the tool, how
   it works, FAQ, and a glossary of worksheet terms.
 
 ## Publisher

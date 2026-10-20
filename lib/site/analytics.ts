@@ -3,14 +3,12 @@
 /**
  * Counting, not tracking.
  *
- * This talks to Vercel Web Analytics through the script the platform already
- * serves at /_vercel/insights/script.js, rather than through @vercel/analytics.
- * The package is a thin wrapper around that script and pulls in a SvelteKit
- * peer dependency that conflicts with this project's test toolchain, so the
- * wrapper costs a dependency and a resolution override for nothing.
- *
- * Vercel Web Analytics is cookieless and stores nothing on the device. No
- * identifier follows a visitor between sessions or between sites.
+ * There is currently no provider. This talked to Vercel Web Analytics through
+ * a script the platform served, which does not exist now the site is
+ * self-hosted, so every call below is a no-op until one is chosen. Whatever
+ * replaces it should be cookieless and store nothing on the device (Plausible
+ * and Umami both qualify and can be self-hosted); wire it in at the one call
+ * site in track() and keep the allowlist.
  *
  * What is never sent: anything from an uploaded worksheet. No company name, no
  * claim number, no figure, no filename, and never the fact that a particular
@@ -30,6 +28,7 @@ export type AnalyticsEvent = (typeof ALLOWED_EVENTS)[number];
 /** Values are short labels chosen in code, never anything a user supplied. */
 export type EventProps = Record<string, string | number | boolean>;
 
+/** The call shape Vercel's script exposed; kept until a replacement is wired. */
 type VercelAnalytics = (
   kind: "event",
   payload: { name: string; data?: EventProps },
