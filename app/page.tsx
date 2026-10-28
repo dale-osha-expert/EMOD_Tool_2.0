@@ -13,14 +13,6 @@ import {
 import { PUBLISHER, TOOL_NAME } from "@/lib/site/brand";
 import { buildSchema } from "@/lib/site/schema";
 
-/*
- * Rendered per request so whether emailing is switched on comes from the
- * server's environment at runtime. Statically built, it would be frozen at
- * whatever the build machine had - which in a Docker image built without
- * secrets means off for good. Every response is already sent no-store.
- */
-export const dynamic = "force-dynamic";
-
 export default function Page() {
   return (
     <div className="@container min-h-dvh">

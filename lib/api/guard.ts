@@ -8,12 +8,11 @@ import { NextResponse } from "next/server";
  * Three cheap layers: require a browser origin, cap body size, and rate limit
  * per caller and per instance.
  *
- * The rate limiter is in-memory and therefore per server process. Self-hosted
- * as one long-running process that is effectively global; it resets on
- * restart. That is an accepted limit: a shared store would mean persistent
- * state, which this tool does not have and does not want. It keys on the first
- * X-Forwarded-For address, so it is only as good as a reverse proxy that
- * overwrites that header rather than appending to it.
+ * The rate limiter is in-memory and therefore per serverless instance, not
+ * global. Vercel reuses warm instances, so sustained abuse from one source is
+ * caught, but a determined attacker spreading across cold starts is not. That
+ * is an accepted limit: a shared store would mean persistent state, which this
+ * tool does not have and does not want.
  */
 
 export interface GuardOptions {

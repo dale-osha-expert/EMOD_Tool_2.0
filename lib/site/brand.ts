@@ -88,22 +88,14 @@ export const DESTINATIONS: SiteLink[] = [
 /**
  * Canonical origin, with no trailing slash.
  *
- * Canonical, sitemap, robots, Open Graph and every JSON-LD @id derive from
- * this, so it must be the one host the site is served from: the apex domain,
- * with www redirecting to it rather than serving a duplicate. Override with
- * NEXT_PUBLIC_SITE_URL only for a staging host, and set it at build time -
- * NEXT_PUBLIC_ values are compiled in.
+ * Set NEXT_PUBLIC_SITE_URL once a real domain is in place; until then this
+ * falls back to the Vercel deployment so canonical, sitemap and Open Graph
+ * tags are at least self-consistent. A vercel.app host inherits no domain
+ * authority, so moving this is the single highest-value SEO change available.
  */
 export const SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL || "https://emodanalyzer.com"
+  process.env.NEXT_PUBLIC_SITE_URL || "https://emod-tool-2-0.vercel.app"
 ).replace(/\/$/, "");
-
-/**
- * The name the domain spells. The tool is titled by its longer name, which
- * is the phrase people search for; this tells answer engines the two are one
- * thing, so a citation of either lands on the same page.
- */
-export const TOOL_SHORT_NAME = "EMOD Analyzer";
 
 export const TOOL_NAME = "Experience Mod Analyzer";
 

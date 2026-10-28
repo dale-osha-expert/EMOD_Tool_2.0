@@ -6,9 +6,7 @@ modification factor, verifies it against the worksheet's own arithmetic, prices
 each claim, and exports a PDF report. It is free and ungated because it is a
 lead magnet for CertifyMe.net, CertifyMeOnline.net and Compliance Hub.
 
-Next.js, self-hosted as a standalone Node server (see `Dockerfile` and the
-Self-hosting section of the README) at `https://emodanalyzer.com`. Repository:
-`fork-it-ai/emod-funnel`.
+Next.js on Vercel. Working branch `claude/ncci-emod-tool-hld8vu`.
 Architecture, SEO and deployment detail live in [README.md](./README.md) — this
 file is the things that will bite you.
 
@@ -157,19 +155,13 @@ npm run fixture -- worksheet.pdf fixtures/name.json "REDACTED CO"
   before changing a description; never describe them from assumption.
 - The proxy allows the `www.` hosts of certifyme.net and certifymeonline.net
   but still denies the apex domains.
-- `SITE_URL` defaults to `https://emodanalyzer.com`; canonical, sitemap,
-  robots, Open Graph and every JSON-LD `@id` follow it. `www` must 301 to the
-  apex at the reverse proxy, never serve a second copy.
-- **No analytics provider.** Vercel's script does not exist off Vercel, so it
-  was removed and `track()` is a no-op until a cookieless replacement is wired.
-- **The reverse proxy must overwrite `X-Forwarded-For`**, not append to it, or
-  every rate limit in `lib/api/guard.ts` can be dodged. README has the nginx
-  config.
+- `SITE_URL` points at the Vercel deployment. Set `NEXT_PUBLIC_SITE_URL` once a
+  real domain exists and canonical, sitemap, Open Graph and schema follow.
 - `NEXT_PUBLIC_AI_ENABLED=true` turns the AI panel on; unset, it is an upsell.
   One codebase serves both the public funnel and Compliance Hub.
 - **"Email it instead" sends the finished PDF through Resend** when
-  `RESEND_API_KEY` and `EMAIL_FROM` are set (read per request - the pages are
-  `force-dynamic` for exactly this - so a restart applies a change). `app/api/email-report` accepts only
+  `RESEND_API_KEY` and `EMAIL_FROM` are set (read on the server at build, so a
+  redeploy is needed after changing them). `app/api/email-report` accepts only
   a PDF this tool rendered, rate limits hard, and logs nothing; the sandbox
   cannot reach Resend, so the route is tested against a stubbed `fetch`. The
   **promotions checkbox is still visual only** - it is not sent anywhere until

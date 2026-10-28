@@ -107,13 +107,6 @@ page does not say is against Google's guidelines and gets sites ignored.
 **`public/llms.txt`** states what the tool does, the formula it applies and the
 facts worth citing, in the plain structured form answer engines prefer.
 
-**One canonical host: `https://emodanalyzer.com`.** Canonical link, sitemap,
-robots, Open Graph and every JSON-LD `@id` derive from `SITE_URL` in
-`lib/site/brand.ts`. Serve the site from the apex only and 301 `www` to it;
-two hosts serving the same page split ranking signals. The WebSite and
-WebApplication entities carry `alternateName: "EMOD Analyzer"`, the name the
-domain spells, so either name resolves to the same page.
-
 `/embed` is `noindex` and disallowed in `robots.txt`: it is the same tool
 without page furniture, and indexing it would split ranking signals across two
 copies of one page.
@@ -141,12 +134,11 @@ recalculation, scenarios, findings and report — is identical and never gated.
 
 ### Measurement
 
-**Currently none.** Vercel Web Analytics was served by the platform and does not
-exist on a self-hosted server, so its script was removed and `track()` is a
-no-op. The events stay defined: an allowlist of three in
-`lib/site/analytics.ts` — a CTA click, a successful parse, a report download.
-A replacement should be cookieless and store nothing on the device (Plausible
-or Umami, both self-hostable) and plugs into the one call in `track()`. Nothing from a worksheet is ever sent — no company
+Vercel Web Analytics, loaded as the platform script rather than
+`@vercel/analytics`, which pulls in a SvelteKit peer that conflicts with the
+test toolchain. Cookieless, stores nothing on the device, and limited to an
+allowlist of three events in `lib/site/analytics.ts`: a CTA click, a successful
+parse, a report download. Nothing from a worksheet is ever sent — no company
 name, no claim number, no figure, not even a filename. The allowlist is what
 keeps that true as the page grows.
 
@@ -167,12 +159,11 @@ layers make abuse expensive rather than impossible:
 Bodies are capped at 512 KB for analysis and ~16 MB for transcription, checked
 from `Content-Length` before the body is read.
 
-The rate limiter is in-memory and therefore **per server process**. Self-hosted
-as a single long-running process, that makes it effectively global; it resets on
-restart, and running several replicas would give each its own budget. A shared
-store would mean persistent state, which this tool does not have and does not
-want. It keys on the first `X-Forwarded-For` address, so the reverse proxy must
-overwrite that header (see Self-hosting).
+The rate limiter is in-memory and therefore **per serverless instance, not
+global**. Vercel reuses warm instances, so sustained abuse from one source is
+caught; an attacker spreading across cold starts is not. That is a deliberate
+limit — a shared store would mean persistent state, which this tool does not
+have and does not want.
 
 ---
 
@@ -231,68 +222,15 @@ Splitting the two model variables keeps the quotas independent: rate limits are
 per-model, so transcribing a scanned worksheet does not eat into the budget the
 written analysis draws on.
 
-### Self-hosting
+### Deploying to Vercel
 
-The app builds to a standalone Node server (`output: "standalone"`), packaged by
-the `Dockerfile`:
+Push the repo, import it, and set `GEMINI_API_KEY`, `GEMINI_MODEL` and
+`GEMINI_VISION_MODEL` as project environment variables. Nothing else is required
+— there is no database and no persistent state.
 
-```bash
-docker build -t emod-funnel .
-docker run -d --restart unless-stopped -p 127.0.0.1:3000:3000 \
-  -e GEMINI_API_KEY=... \
-  -e RESEND_API_KEY=... -e EMAIL_FROM="EMOD Analyzer <reports@emodanalyzer.com>" \
-  emod-funnel
-```
-
-Without Docker: `npm ci && npm run build`, copy `.next/static` and `public`
-into `.next/standalone`, and run `node .next/standalone/server.js` under a
-process manager (systemd, pm2). There is no database and no persistent state.
-
-**Secrets are runtime environment, read per request.** Changing one needs a
-container restart, not a rebuild. The exceptions are `NEXT_PUBLIC_*` values,
-which are compiled into the browser bundle and so are build args:
-`NEXT_PUBLIC_SITE_URL` (defaults to `https://emodanalyzer.com`; override only
-for a staging host) and `NEXT_PUBLIC_AI_ENABLED`.
-
-**Put it behind a reverse proxy that terminates TLS** and sets the forwarding
-headers the API guard relies on. With nginx:
-
-```nginx
-server {
-  listen 443 ssl;
-  server_name emodanalyzer.com;
-  # ssl_certificate ... (e.g. from certbot)
-  client_max_body_size 20m;   # scanned-PDF transcription bodies run to ~16 MB
-
-  location / {
-    proxy_pass http://127.0.0.1:3000;
-    proxy_set_header Host $host;
-    proxy_set_header X-Forwarded-Host $host;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    # Overwrite, never append: the rate limiter keys on the first address in
-    # this header, and $proxy_add_x_forwarded_for would let a client put any
-    # address it likes there and dodge every limit.
-    proxy_set_header X-Forwarded-For $remote_addr;
-  }
-}
-server {
-  listen 443 ssl;
-  server_name www.emodanalyzer.com;
-  return 301 https://emodanalyzer.com$request_uri;
-}
-server {
-  listen 80;
-  server_name emodanalyzer.com www.emodanalyzer.com;
-  return 301 https://emodanalyzer.com$request_uri;
-}
-```
-
-Do not publish port 3000 directly: without the proxy in front, a caller can set
-`X-Forwarded-For` itself.
-
-When a pinned model eventually retires, the symptom is a stated error naming
-the model and the fix is to update that one variable; nothing else in the tool
-is affected.
+Env changes need a redeploy to take effect. When a pinned model eventually
+retires, the symptom is a stated error naming the model and the fix is to update
+that one variable; nothing else in the tool is affected.
 
 ---
 
@@ -303,7 +241,7 @@ everything else:
 
 ```html
 <iframe
-  src="https://emodanalyzer.com/embed"
+  src="https://your-deployment.vercel.app/embed"
   style="width:100%;height:1400px;border:0"
   title="Experience Modification Analyser"
 ></iframe>
