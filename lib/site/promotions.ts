@@ -71,7 +71,7 @@ export function buildPromotions(
       : {
           id: "training",
           headline: "This mod is already at its loss-free minimum",
-          body: `A claim that happens now would enter the rating about a year from now and stay for about three. ${prevention}`,
+          body: `A claim that happens now would start counting in a rating one to two years from now and stay for three. ${prevention}`,
           links: [
             { link: CERTIFY_ME, label: "Forklift operators" },
             { link: CERTIFY_ME_ONLINE, label: "Aerial and scissor lift operators" },

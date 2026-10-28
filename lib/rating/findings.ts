@@ -42,7 +42,7 @@ export function buildFindings(
         `The worksheet prints ${money(c.printed)} where the other printed values imply ` +
         `${money(c.derived)}, a difference of ${money(Math.abs(c.delta))}. This may be a reading ` +
         `error on our side, or it may be a genuine discrepancy in the rating worth raising with ` +
-        `your agent or the rating bureau. Confirm the figure against the original document before acting on it.`,
+        `your agent or carrier, who can take it to the rating bureau. Confirm the figure against the original document before acting on it.`,
       evidence: [
         `Printed: ${money(c.printed)}`,
         `Derived: ${money(c.derived)}`,

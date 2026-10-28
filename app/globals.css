@@ -31,8 +31,34 @@
     monospace;
 }
 
+/*
+ * Chart colours for the guides' inline SVG. The drafts arrive with hex
+ * colours, which lib/site/guide-content.ts swaps for these by hue, so every
+ * chart follows the scheme. Light values are darkened from the drafts' where
+ * needed to keep 3:1 against the canvas; dark values are lightened for the
+ * same reason.
+ */
+:root {
+  --chart-blue: #2563eb;
+  --chart-amber: #d97706;
+  --chart-green: #059669;
+  --chart-slate: #64748b;
+  --chart-orange: #ea580c;
+  --chart-teal: #0d9488;
+  --chart-muted: #9ca3af;
+  --chart-red: #dc2626;
+}
+
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
+    --chart-blue: #60a5fa;
+    --chart-amber: #fbbf24;
+    --chart-green: #34d399;
+    --chart-slate: #94a3b8;
+    --chart-orange: #fb923c;
+    --chart-teal: #2dd4bf;
+    --chart-muted: #6b7280;
+    --chart-red: #f87171;
     --color-canvas: #12151a;
     --color-surface: #191d23;
     --color-surface-2: #21262e;
@@ -53,6 +79,14 @@
 }
 
 :root[data-theme="dark"] {
+  --chart-blue: #60a5fa;
+  --chart-amber: #fbbf24;
+  --chart-green: #34d399;
+  --chart-slate: #94a3b8;
+  --chart-orange: #fb923c;
+  --chart-teal: #2dd4bf;
+  --chart-muted: #6b7280;
+  --chart-red: #f87171;
   --color-canvas: #12151a;
   --color-surface: #191d23;
   --color-surface-2: #21262e;
@@ -145,4 +179,271 @@ body {
   .no-print {
     display: none !important;
   }
+}
+
+/*
+ * Guide articles. The body is rendered Markdown, so it is styled by element
+ * here rather than by utility classes in markup this codebase does not write.
+ */
+.guide-prose {
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.guide-prose > * + * {
+  margin-top: 1.1em;
+}
+
+.guide-prose h2 {
+  margin-top: 2.2em;
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  scroll-margin-top: 1rem;
+}
+
+.guide-prose h3 {
+  margin-top: 1.7em;
+  font-size: 17.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  scroll-margin-top: 1rem;
+}
+
+.guide-prose h2 + *,
+.guide-prose h3 + * {
+  margin-top: 0.6em;
+}
+
+.guide-prose ul,
+.guide-prose ol {
+  padding-left: 1.4em;
+}
+
+.guide-prose ul {
+  list-style: disc;
+}
+
+.guide-prose ol {
+  list-style: decimal;
+}
+
+.guide-prose li + li {
+  margin-top: 0.4em;
+}
+
+.guide-prose li::marker {
+  color: var(--color-ink-faint);
+}
+
+.guide-prose a {
+  color: var(--color-accent);
+  text-decoration-line: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+  transition:
+    text-decoration-color 0.15s,
+    background-color 0.15s;
+}
+
+.guide-prose a:hover {
+  text-decoration-color: currentColor;
+}
+
+/*
+ * Links to the calculator and the other guides are the page's calls to
+ * action; the rest are source citations. Weight is what tells them apart.
+ */
+.guide-prose a[href^="/"] {
+  font-weight: 600;
+}
+
+.guide-prose strong {
+  font-weight: 600;
+}
+
+.guide-prose code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--color-surface-2);
+  border-radius: 4px;
+  padding: 0.15em 0.4em;
+  overflow-wrap: anywhere;
+}
+
+/* The drafts' "Key Takeaways" box is a blockquote. */
+.guide-prose blockquote {
+  border-left: 3px solid var(--color-accent);
+  background: var(--color-accent-soft);
+  border-radius: 0 8px 8px 0;
+  padding: 1rem 1.25rem;
+}
+
+.guide-prose blockquote > * + * {
+  margin-top: 0.6em;
+}
+
+/* Small-caps labels: "Key Takeaways" (a bold first line) and the TOC title. */
+.guide-prose blockquote > p:first-child > strong:only-child,
+.guide-toc-title {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+/*
+ * Table of contents: numbered rows with a whole-row hover target, in two
+ * columns when the article column is wide enough to keep titles on one line.
+ */
+.guide-toc {
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+  border-radius: 10px;
+  padding: 1rem 0.75rem 0.75rem;
+}
+
+.guide-toc-title {
+  padding-inline: 0.5rem;
+}
+
+.guide-prose .guide-toc ul {
+  list-style: none;
+  margin-top: 0.5rem;
+  padding: 0;
+  counter-reset: toc;
+}
+
+@container (min-width: 40rem) {
+  .guide-prose .guide-toc ul {
+    columns: 2;
+    column-gap: 0.75rem;
+  }
+}
+
+/* The article runs the full content width on a wide screen. */
+@container (min-width: 64rem) {
+  .guide-prose {
+    font-size: 17px;
+  }
+
+  .guide-prose .guide-toc ul {
+    columns: 3;
+  }
+}
+
+.guide-prose .guide-toc li {
+  margin: 0;
+  counter-increment: toc;
+  break-inside: avoid;
+}
+
+.guide-prose .guide-toc a {
+  display: flex;
+  gap: 0.65rem;
+  align-items: baseline;
+  padding: 0.4rem 0.5rem;
+  border-radius: 6px;
+  color: var(--color-ink);
+  font-size: 14.5px;
+  font-weight: 500;
+  line-height: 1.4;
+  text-decoration: none;
+}
+
+.guide-prose .guide-toc a::before {
+  content: counter(toc, decimal-leading-zero);
+  flex: none;
+  min-width: 1.4em;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-accent);
+}
+
+.guide-prose .guide-toc a:hover {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Charts sit on a surface card; their text is currentColor, so it follows the ink. */
+.guide-prose figure {
+  margin-top: 2em;
+  margin-bottom: 2em;
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+  border-radius: 10px;
+  padding: 1rem;
+  color: var(--color-ink);
+}
+
+/*
+ * Charts are drawn at a fixed width (--svg-w, from the SVG). They grow up to
+ * 1.35x that on a wide page, so labels stay readable rather than floating
+ * small in a wide card, and shrink to fit on a phone.
+ */
+.guide-prose figure svg {
+  display: block;
+  width: 100%;
+  max-width: calc(var(--svg-w, 560px) * 1.35);
+  height: auto;
+  margin-inline: auto;
+  font-family: var(--font-sans);
+}
+
+.guide-prose figcaption {
+  margin-top: 0.75em;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--color-ink-muted);
+}
+
+.guide-prose img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+.guide-table table {
+  width: 100%;
+  /* Below this, cells wrap a word per line; scrolling the box reads better. */
+  min-width: 32rem;
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.guide-table th,
+.guide-table td {
+  border-bottom: 1px solid var(--color-line);
+  padding: 0.55em 0.75em;
+  text-align: left;
+  vertical-align: top;
+}
+
+.guide-table th {
+  background: var(--color-surface);
+  font-weight: 600;
+}
+
+.guide-prose hr {
+  margin-top: 2.5em;
+  border: 0;
+  border-top: 1px solid var(--color-line);
+}
+
+/* The "About this guide" note after the closing rule. */
+.guide-prose hr ~ p {
+  font-size: 13.5px;
+  color: var(--color-ink-muted);
 }

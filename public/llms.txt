@@ -35,8 +35,10 @@ proportional to its primary losses plus its weighted excess losses.
 ## Key facts
 
 - A mod of 1.00 is average. Below 1.00 is a credit; above 1.00 is a debit.
-- The experience period is normally three policy years ending about one year
-  before the rating effective date.
+- The experience period is normally three policy years: those that began
+  21 to 57 months before the rating effective date, so the policy in force
+  today is never included. A claim first counts about two years after its
+  policy began and stays in for three annual ratings.
 - The split point divides each claim into primary and excess losses. It varies
   by state and over time, and appears as its own column on worksheets from 2025.
 - Excess losses enter the calculation only at the weighting factor, so primary
@@ -50,12 +52,25 @@ proportional to its primary losses plus its weighted excess losses.
 
 - [Experience Mod Analyzer](https://emodanalyzer.com/): the tool, how
   it works, FAQ, and a glossary of worksheet terms.
+- [What Is an Experience Modification Rate (EMR)?](https://emodanalyzer.com/what-is-experience-modification-rate-emr):
+  what the mod means, the NCCI formula step by step with worked examples from
+  NCCI's own sample worksheet, why claim frequency moves a mod more than
+  severity, the loss-free floor, the 2024 state-specific split points, and
+  which states NCCI's plan does not cover.
+- [How to Read an Experience Mod Worksheet](https://emodanalyzer.com/how-to-read-experience-mod-worksheet):
+  each field on the NCCI worksheet, the arithmetic that can be checked by
+  hand, why the summary shows two loss totals, how much an error costs
+  depending on where it sits, common errors and the dispute process.
+- [EMR in Construction](https://emodanalyzer.com/emr-in-construction):
+  what owners ask for on real prequalification forms, the Texas, Virginia and
+  Indiana laws and the NCOIL model act restricting EMR bid cutoffs, how many
+  small claims it takes to cross 1.0, and EMR compared with TRIR.
 
 ## Publisher
 
-- [CertifyMe.net](https://certifyme.net): online forklift operator training and certification for employers.
+- [CertifyMe.net](https://www.certifyme.net): online forklift operator training and certification for employers.
 - [Compliance Hub](https://compliance-hub.cloud): employee document and certification tracking for small employers.
-- [CertifyMeOnline.net](https://certifymeonline.net): online aerial and scissor lift operator training.
+- [CertifyMeOnline.net](https://www.certifymeonline.net): online aerial and scissor lift operator training.
 
 ## Notes
 

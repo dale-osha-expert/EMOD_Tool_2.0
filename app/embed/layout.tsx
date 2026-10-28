@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { TOOL_NAME } from "@/lib/site/brand";
 
 /**
  * The embed route is the same tool without its page furniture, for use inside
@@ -6,7 +7,7 @@ import type { Metadata } from "next";
  * the tool in the index competing with the page that should rank.
  */
 export const metadata: Metadata = {
-  title: "Experience Mod Analyzer",
+  title: TOOL_NAME,
   robots: { index: false, follow: false },
   alternates: { canonical: "/" },
 };

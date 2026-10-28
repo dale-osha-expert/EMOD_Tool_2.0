@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { DESTINATIONS, TOOL_NAME } from "@/lib/site/brand";
 import { FAQS, GLOSSARY, HOW_IT_WORKS } from "@/lib/site/content";
 import { DestinationCard } from "./Cta";
@@ -103,6 +104,14 @@ export function Faqs() {
             <p className="mt-2 max-w-3xl text-[13.5px] leading-relaxed text-[var(--color-ink-muted)]">
               {item.answer}
             </p>
+            {item.more ? (
+              <Link
+                href={item.more.href}
+                className="mt-2 inline-flex items-center gap-1 text-[13px] font-medium text-[var(--color-accent)] hover:underline"
+              >
+                {item.more.label} <span aria-hidden>&rarr;</span>
+              </Link>
+            ) : null}
           </details>
         ))}
       </div>
