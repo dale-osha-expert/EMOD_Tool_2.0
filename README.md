@@ -158,6 +158,7 @@ worse than no page, and an answer engine will repeat the mistake.
 | `RESEND_API_KEY` | Resend API key. With `EMAIL_FROM`, switches on "Email it instead" in the report builder. Server-only; never reaches the browser. |
 | `EMAIL_FROM` | Sender, e.g. `CertifyMe.net <reports@certifyme.net>`. Its domain must be verified in Resend. For testing without a verified domain, use `onboarding@resend.dev`; Resend then delivers only to the Resend account owner's own address, so keep that setup off Production. |
 | `EMAIL_REPLY_TO` | Optional reply-to address for the report email. |
+| `REDIRECT_TO` | Unset by default. Set to `https://emodanalyzer.com` (Production only) and redeploy once that domain is live: every path permanently redirects to the same path there, except the Search Console verification file. A malformed value fails the build. |
 | `NEXT_PUBLIC_AI_ENABLED` | `true` runs the AI analysis in this deployment. Unset, the panel describes what the analysis adds and links to Compliance Hub. |
 
 One codebase serves both deployments: the public funnel with the AI panel as an

@@ -115,7 +115,7 @@ the printed totals is recovered in `lib/rating/claims.ts`. Quote
 ## Commands
 
 ```bash
-npm test          # 177 tests, ~35-55s
+npm test          # 181 tests, ~35-55s
 npm run typecheck
 npm run build
 npm run dev
@@ -170,6 +170,12 @@ npm run fixture -- worksheet.pdf fixtures/name.json "REDACTED CO"
   This repository is the Vercel deployment; the self-hosted build at
   emodanalyzer.com lives in `fork-it-ai/emod-funnel`, so keep hosting-specific
   changes (Docker, standalone output, the canonical domain) out of here.
+- **The move to emodanalyzer.com is one env var.** Setting
+  `REDIRECT_TO=https://emodanalyzer.com` (Production) and redeploying makes
+  every path 308 to the same path there; unset, nothing changes. The Search
+  Console file is exempt so the Vercel property stays verified for Change of
+  Address. Keep the redirect at least a year. Do not delete that file or
+  remove the exemption while the move is processing.
 - `NEXT_PUBLIC_AI_ENABLED=true` turns the AI panel on; unset, it is an upsell.
   One codebase serves both the public funnel and Compliance Hub.
 - **Emailing reports is hidden.** `EMAIL_FEATURE_ENABLED` in
