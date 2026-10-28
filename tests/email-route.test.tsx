@@ -8,6 +8,11 @@ import { resetRateLimits } from "@/lib/api/guard";
 import { EmodReport } from "@/lib/report/document";
 import { loadFixture } from "./helpers";
 
+// The feature ships hidden (lib/email/feature.ts). These tests exercise the
+// route as it behaves once switched on, so the logic stays verified while it
+// waits; tests/email-hidden.test.ts covers the shipped, hidden state.
+vi.mock("@/lib/email/feature", () => ({ EMAIL_FEATURE_ENABLED: true }));
+
 const logo = `data:image/png;base64,${readFileSync(
   fileURLToPath(new URL("../public/logo-wordmark.png", import.meta.url)),
 ).toString("base64")}`;

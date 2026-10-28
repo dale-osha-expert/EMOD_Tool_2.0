@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { guardRequest } from "@/lib/api/guard";
+import { EMAIL_FEATURE_ENABLED } from "@/lib/email/feature";
 import {
   EmailError,
   emailConfig,
@@ -25,6 +26,12 @@ const MAX_BODY_BYTES = MAX_ATTACHMENT_BYTES + 64 * 1024;
  * stays in the browser as it always has.
  */
 export async function POST(request: Request) {
+  // While the feature is hidden the route does not exist as far as callers can
+  // tell - not even its error messages, which would advertise it.
+  if (!EMAIL_FEATURE_ENABLED) {
+    return new NextResponse(null, { status: 404 });
+  }
+
   const blocked = guardRequest(request, {
     route: "email-report",
     maxBytes: MAX_BODY_BYTES,

@@ -115,7 +115,7 @@ the printed totals is recovered in `lib/rating/claims.ts`. Quote
 ## Commands
 
 ```bash
-npm test          # 175 tests, ~35-55s
+npm test          # 177 tests, ~35-55s
 npm run typecheck
 npm run build
 npm run dev
@@ -172,6 +172,11 @@ npm run fixture -- worksheet.pdf fixtures/name.json "REDACTED CO"
   changes (Docker, standalone output, the canonical domain) out of here.
 - `NEXT_PUBLIC_AI_ENABLED=true` turns the AI panel on; unset, it is an upsell.
   One codebase serves both the public funnel and Compliance Hub.
+- **Emailing reports is hidden.** `EMAIL_FEATURE_ENABLED` in
+  `lib/email/feature.ts` is `false`: the form is not rendered and
+  `/api/email-report` answers 404, whatever the env says. It is a constant on
+  purpose, so no deployment setting turns it on; it waits on a decision about
+  protecting a public form that sends mail. When it is switched on:
 - **"Email it instead" sends the finished PDF through Resend** when
   `RESEND_API_KEY` and `EMAIL_FROM` are set (read on the server at build, so a
   redeploy is needed after changing them). `app/api/email-report` accepts only

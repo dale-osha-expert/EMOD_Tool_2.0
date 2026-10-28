@@ -7,6 +7,7 @@ import { track } from "@/lib/site/analytics";
 import { PUBLISHER } from "@/lib/site/brand";
 import { Button, Card, CardHeader, cx, Spinner } from "./ui";
 import { EmailReport } from "./EmailReport";
+import { EMAIL_FEATURE_ENABLED } from "@/lib/email/feature";
 import { ErrorPanel } from "./ErrorPanel";
 import { reportError } from "@/lib/report/errors";
 import type { ToolError } from "@/lib/useEmodTool";
@@ -248,18 +249,21 @@ export function ReportBuilder({
           ) : null}
         </div>
 
-        <EmailReport
-          enabled={emailEnabled}
-          disabled={building || sections.length === 0}
-          buildPdf={buildPdf}
-          onSent={() =>
-            track("report_downloaded", {
-              preset: custom ? "custom" : presetId,
-              sections: sections.length,
-              delivery: "email",
-            })
-          }
-        />
+        {/* Hidden, not removed: see lib/email/feature.ts. */}
+        {EMAIL_FEATURE_ENABLED ? (
+          <EmailReport
+            enabled={emailEnabled}
+            disabled={building || sections.length === 0}
+            buildPdf={buildPdf}
+            onSent={() =>
+              track("report_downloaded", {
+                preset: custom ? "custom" : presetId,
+                sections: sections.length,
+                delivery: "email",
+              })
+            }
+          />
+        ) : null}
       </div>
     </Card>
   );
