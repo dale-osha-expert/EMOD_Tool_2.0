@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // The guides and sitemap read their Markdown with fs, which tracing cannot
+  // see. Both are generated at build time, so this only matters if one is
+  // ever rendered at runtime - and then a missing file would be a 500.
+  outputFileTracingIncludes: { "/*": ["./content/guides/*.md"] },
   // The tool is designed to be embedded in a third-party "tools" page via iframe.
   // We therefore do NOT send X-Frame-Options: DENY. Framing is controlled by CSP
   // frame-ancestors instead, which is configurable per deployment.

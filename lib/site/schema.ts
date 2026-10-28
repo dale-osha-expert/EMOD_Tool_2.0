@@ -1,5 +1,6 @@
-import { PUBLISHER, SITE_URL, TOOL_NAME } from "./brand";
-import { FAQS, GLOSSARY } from "./content";
+import { PUBLISHER, SITE_URL, TOOL_NAME, TOOL_SHORT_NAME } from "./brand";
+import { FAQS, GLOSSARY, type Faq } from "./content";
+import { GUIDES, guidePath } from "./guides";
 
 /**
  * JSON-LD structured data.
@@ -10,10 +11,14 @@ import { FAQS, GLOSSARY } from "./content";
  * likely than prose alone. Every claim here mirrors visible page content —
  * marking up something the page does not say is both against Google's
  * guidelines and the kind of thing that gets a site ignored.
+ *
+ * The tool page and the guides share one Organization and one WebSite by @id,
+ * so an answer engine reads them as one publisher's site rather than as
+ * unrelated pages that happen to mention each other.
  */
 
-export function buildSchema() {
-  const organization = {
+function organizationNode() {
+  return {
     "@type": "Organization",
     "@id": `${PUBLISHER.url}/#organization`,
     name: PUBLISHER.name,
@@ -21,11 +26,39 @@ export function buildSchema() {
     ...(PUBLISHER.description ? { description: PUBLISHER.description } : {}),
     ...(PUBLISHER.logo ? { logo: `${SITE_URL}${PUBLISHER.logo}` } : {}),
   };
+}
+
+function websiteNode() {
+  return {
+    "@type": "WebSite",
+    "@id": `${SITE_URL}/#website`,
+    url: SITE_URL,
+    name: TOOL_NAME,
+    alternateName: TOOL_SHORT_NAME,
+    publisher: { "@id": `${PUBLISHER.url}/#organization` },
+  };
+}
+
+function faqNode(id: string, faqs: Faq[]) {
+  return {
+    "@type": "FAQPage",
+    "@id": id,
+    mainEntity: faqs.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: { "@type": "Answer", text: item.answer },
+    })),
+  };
+}
+
+export function buildSchema() {
+  const organization = organizationNode();
 
   const application = {
     "@type": "WebApplication",
     "@id": `${SITE_URL}/#tool`,
     name: TOOL_NAME,
+    alternateName: TOOL_SHORT_NAME,
     url: SITE_URL,
     applicationCategory: "BusinessApplication",
     operatingSystem: "Any modern web browser",
@@ -48,15 +81,7 @@ export function buildSchema() {
     ],
   };
 
-  const faq = {
-    "@type": "FAQPage",
-    "@id": `${SITE_URL}/#faq`,
-    mainEntity: FAQS.map((item) => ({
-      "@type": "Question",
-      name: item.question,
-      acceptedAnswer: { "@type": "Answer", text: item.answer },
-    })),
-  };
+  const faq = faqNode(`${SITE_URL}/#faq`, FAQS);
 
   const glossary = {
     "@type": "DefinedTermSet",
@@ -78,18 +103,89 @@ export function buildSchema() {
     isPartOf: { "@id": `${SITE_URL}/#website` },
     about: { "@id": application["@id"] },
     publisher: { "@id": organization["@id"] },
-  };
-
-  const website = {
-    "@type": "WebSite",
-    "@id": `${SITE_URL}/#website`,
-    url: SITE_URL,
-    name: TOOL_NAME,
-    publisher: { "@id": organization["@id"] },
+    // The guide cards on the page link to each of these.
+    relatedLink: GUIDES.map((g) => `${SITE_URL}${guidePath(g.slug)}`),
   };
 
   return {
     "@context": "https://schema.org",
-    "@graph": [organization, website, page, application, faq, glossary],
+    "@graph": [organization, websiteNode(), page, application, faq, glossary],
+  };
+}
+
+export interface GuideSchemaInput {
+  slug: string;
+  title: string;
+  description: string;
+  datePublished: string;
+  dateModified: string;
+  heroAlt: string;
+  keywords: string[];
+  wordCount: number;
+  faqs: Faq[];
+}
+
+export function buildGuideSchema(guide: GuideSchemaInput) {
+  const url = `${SITE_URL}${guidePath(guide.slug)}`;
+  const organization = { "@id": `${PUBLISHER.url}/#organization` };
+  const image = {
+    "@type": "ImageObject",
+    url: `${SITE_URL}/guides/${guide.slug}/hero.jpg`,
+    width: 1200,
+    height: 630,
+    caption: guide.heroAlt,
+  };
+
+  const breadcrumb = {
+    "@type": "BreadcrumbList",
+    "@id": `${url}#breadcrumb`,
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: TOOL_NAME, item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: guide.title, item: url },
+    ],
+  };
+
+  const page = {
+    "@type": "WebPage",
+    "@id": `${url}#webpage`,
+    url,
+    name: guide.title,
+    description: guide.description,
+    isPartOf: { "@id": `${SITE_URL}/#website` },
+    breadcrumb: { "@id": breadcrumb["@id"] },
+    primaryImageOfPage: image,
+    inLanguage: "en-US",
+  };
+
+  const article = {
+    "@type": "Article",
+    "@id": `${url}#article`,
+    headline: guide.title,
+    description: guide.description,
+    image,
+    datePublished: guide.datePublished,
+    dateModified: guide.dateModified,
+    author: organization,
+    publisher: organization,
+    mainEntityOfPage: { "@id": page["@id"] },
+    isPartOf: { "@id": `${SITE_URL}/#website` },
+    // Every guide links to the calculator, and the calculator is the subject
+    // the guides exist to support.
+    mentions: { "@id": `${SITE_URL}/#tool` },
+    keywords: guide.keywords.join(", "),
+    wordCount: guide.wordCount,
+    inLanguage: "en-US",
+  };
+
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      organizationNode(),
+      websiteNode(),
+      page,
+      article,
+      breadcrumb,
+      ...(guide.faqs.length ? [faqNode(`${url}#faq`, guide.faqs)] : []),
+    ],
   };
 }

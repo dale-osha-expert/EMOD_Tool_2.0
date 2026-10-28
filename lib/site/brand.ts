@@ -29,7 +29,10 @@ export interface SiteLink {
 /** The publisher of this tool. Appears in the header, footer and report. */
 export const PUBLISHER = {
   name: "CertifyMe.net",
-  url: "https://certifyme.net",
+  // The www host: the apex 301s to it, so linking the apex costs every
+  // visitor a redirect and gives the Organization a second identity beside
+  // the www URLs the guides cite.
+  url: "https://www.certifyme.net",
   /** Used in the Organization schema. Confirmed against certifyme.net. */
   description:
     "CertifyMe.net has provided online forklift operator training and certification for employers since 1999, with a printable operator card on completion, the onsite evaluation checklist, and free three-year renewals.",
@@ -63,7 +66,7 @@ export const COMPLIANCE_HUB: SiteLink = {
 
 export const CERTIFY_ME_ONLINE: SiteLink = {
   name: "CertifyMeOnline.net",
-  url: "https://certifymeonline.net",
+  url: "https://www.certifymeonline.net",
   // Aerial and scissor lifts, where CertifyMe.net is forklifts.
   description:
     "Online aerial lift operator training, with one course covering scissor lifts, boom lifts and cherry pickers, plus the onsite evaluation checklist, a wallet card mailed to you and free three-year renewals.",
@@ -72,7 +75,7 @@ export const CERTIFY_ME_ONLINE: SiteLink = {
 
 export const CERTIFY_ME: SiteLink = {
   name: "CertifyMe.net",
-  url: "https://certifyme.net",
+  url: "https://www.certifyme.net",
   description:
     "Online forklift operator certification for warehouse, rough terrain and order picker trucks and pallet jacks, plus Train the Trainer, with a printable operator card on completion and free three-year renewals.",
   cta: "See forklift courses",
@@ -98,6 +101,13 @@ export const SITE_URL = (
 ).replace(/\/$/, "");
 
 export const TOOL_NAME = "Experience Mod Analyzer";
+
+/**
+ * The name the domain spells. The tool is titled by its longer name, which
+ * is the phrase people search for; this tells answer engines the two are one
+ * thing, so a citation of either lands on the same page.
+ */
+export const TOOL_SHORT_NAME = "EMOD Analyzer";
 
 /**
  * Whether this deployment runs the AI written analysis itself.

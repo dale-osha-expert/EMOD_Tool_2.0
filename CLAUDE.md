@@ -98,6 +98,15 @@ prints, never on fixed coordinates — that is what lets one parser read the
 (figures are right-aligned), alphabetic cells by their left. New form variants
 usually need an optional `ColumnSpec`, not new logic.
 
+**The guides are someone else's Markdown.** `content/guides/*.md` comes from
+the content pipeline and is replaced wholesale on revision, so never hand-edit
+it to fix rendering — fix `lib/site/guide-content.ts`. Chart colours in its
+inline SVG are mapped to `--chart-*` tokens defined three times in
+`app/globals.css` (light, dark by preference, dark by toggle); an unmapped hex
+throws at build. The tool page is rendered per request and the Markdown is only
+read at build, so never call `loadGuide` from `app/page.tsx` — copy for menus
+and cards lives in `lib/site/guides.ts`.
+
 **Claim values are not what they appear.** A claim flagged `#` or `C` enters the
 rating at less than its printed incurred; the gap between the printed claims and
 the printed totals is recovered in `lib/rating/claims.ts`. Quote
@@ -106,7 +115,7 @@ the printed totals is recovered in `lib/rating/claims.ts`. Quote
 ## Commands
 
 ```bash
-npm test          # 141 tests, ~55s
+npm test          # 175 tests, ~35-55s
 npm run typecheck
 npm run build
 npm run dev
@@ -153,10 +162,14 @@ npm run fixture -- worksheet.pdf fixtures/name.json "REDACTED CO"
   public site says nothing about the AI analysis, so `AiUpsell.tsx` describes
   only what `lib/llm/*` produces and never how it looks there. Re-read the sites
   before changing a description; never describe them from assumption.
-- The proxy allows the `www.` hosts of certifyme.net and certifymeonline.net
-  but still denies the apex domains.
+- Both CertifyMe sites 301 their apex domain to `www.`, so every link and the
+  Organization `@id` use the `www.` host (the sandbox proxy also denies the
+  apex). Do not "tidy" them back to the apex.
 - `SITE_URL` points at the Vercel deployment. Set `NEXT_PUBLIC_SITE_URL` once a
   real domain exists and canonical, sitemap, Open Graph and schema follow.
+  This repository is the Vercel deployment; the self-hosted build at
+  emodanalyzer.com lives in `fork-it-ai/emod-funnel`, so keep hosting-specific
+  changes (Docker, standalone output, the canonical domain) out of here.
 - `NEXT_PUBLIC_AI_ENABLED=true` turns the AI panel on; unset, it is an upsell.
   One codebase serves both the public funnel and Compliance Hub.
 - **"Email it instead" sends the finished PDF through Resend** when

@@ -1,4 +1,4 @@
-# Experience Modification Analyser
+# Experience Mod Analyzer
 
 Reads an NCCI Workers Compensation Experience Rating worksheet, recalculates the
 experience modification factor, shows what each claim is costing, and exports a
@@ -110,6 +110,38 @@ facts worth citing, in the plain structured form answer engines prefer.
 `/embed` is `noindex` and disallowed in `robots.txt`: it is the same tool
 without page furniture, and indexing it would split ranking signals across two
 copies of one page.
+
+### Pillar guides
+
+Three long-form guides support the tool page, each at the slug its draft
+recommends:
+
+| Path | Guide |
+|---|---|
+| `/what-is-experience-modification-rate-emr` | What an EMR is, the NCCI formula, worked examples |
+| `/how-to-read-experience-mod-worksheet` | The worksheet field by field, checking it, disputing an error |
+| `/emr-in-construction` | Bid prequalification, the states restricting EMR cutoffs, EMR vs. TRIR |
+
+The tool page links to every guide (the **Guides** menu top right, a guide
+section, the footer) and every guide links back to the tool and across to the
+others. Each guide carries an Article, BreadcrumbList and FAQPage graph sharing
+the tool page's Organization and WebSite by `@id`, and is listed in the
+sitemap and in `public/llms.txt`.
+
+The article text is the content pipeline's Markdown, committed unedited in
+`content/guides/<slug>.md`, with its images in `public/guides/<slug>/`.
+`lib/site/guide-content.ts` renders it at build time and rewrites what has to
+change: chart colours become theme tokens so charts follow light and dark,
+`https://emodanalyzer.com` links become site-relative, and image paths point
+into `public/`. Anything it does not recognise — a chart colour with no token,
+a link to a page that does not exist, missing front matter — fails the build
+instead of rendering wrong.
+
+To add a guide: copy the `.md` into `content/guides/`, its `hero.jpg` and
+`images/` into `public/guides/<slug>/`, add an entry to `GUIDES` in
+`lib/site/guides.ts` (menu label, one-line summary, photo credit), and a line
+to `public/llms.txt`. On wide screens the hero is cropped to a 3:1 banner;
+if the photo's subject is not near the middle, set `heroFocus` on its entry. To revise one, copy the new `.md` over the old.
 
 ### Brand configuration
 
@@ -243,7 +275,7 @@ everything else:
 <iframe
   src="https://your-deployment.vercel.app/embed"
   style="width:100%;height:1400px;border:0"
-  title="Experience Modification Analyser"
+  title="Experience Mod Analyzer"
 ></iframe>
 ```
 

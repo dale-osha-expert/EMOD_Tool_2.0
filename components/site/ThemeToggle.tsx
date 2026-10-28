@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type Theme = "system" | "light" | "dark";
 
@@ -17,9 +17,18 @@ const OPTIONS: { value: Theme; label: string }[] = [
  * or sets a cookie, and the smoke test asserts it. "Auto" follows the browser,
  * which is what most visitors want anyway, so a reload falling back to it is
  * the right failure.
+ *
+ * The override lives on <html>, which survives client-side navigation between
+ * the tool and the guides while this component remounts, so it reads the
+ * attribute back rather than assuming Auto.
  */
 export function ThemeToggle() {
   const [theme, setTheme] = useState<Theme>("system");
+
+  useEffect(() => {
+    const current = document.documentElement.getAttribute("data-theme");
+    if (current === "light" || current === "dark") setTheme(current);
+  }, []);
 
   function choose(next: Theme) {
     setTheme(next);
